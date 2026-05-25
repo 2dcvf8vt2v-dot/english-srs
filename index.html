@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>English SRS</title>
+
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+
+  <meta name="theme-color" content="#f5f3ef" />
+</head>
+
+<body>
+  <div class="app">
+    <header class="top-bar">
+      <div>
+        <p class="eyebrow">English SRS</p>
+        <h1 id="screenTitle">Home</h1>
+      </div>
+    </header>
+
+    <main>
+      <section class="screen active" id="homeScreen">
+        <div class="hero-card">
+          <p class="muted">Today</p>
+          <h2><span id="dueCount">0</span> words due</h2>
+          <button class="primary-btn" id="startReviewBtn">Start review</button>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span id="totalWords">0</span>
+            <p>Total words</p>
+          </div>
+
+          <div class="stat-card">
+            <span id="totalPacks">0</span>
+            <p>Exercise packs</p>
+          </div>
+        </div>
+
+        <button class="secondary-btn" data-screen="practiceScreen">Practice</button>
+      </section>
+
+      <section class="screen" id="reviewScreen">
+        <div class="review-card" id="reviewCard">
+          <p class="muted" id="reviewProgress">No cards due</p>
+          <h2 id="reviewWord">You're all caught up</h2>
+          <p class="review-hint" id="reviewHint">No words are due right now.</p>
+
+          <div class="review-answer" id="reviewAnswer" hidden>
+            <p id="reviewMeaning"></p>
+            <blockquote id="reviewExample"></blockquote>
+          </div>
+        </div>
+
+        <div class="review-actions" id="reviewActions" hidden>
+          <button class="rating-btn again" data-rating="again">Again</button>
+          <button class="rating-btn hard" data-rating="hard">Hard</button>
+          <button class="rating-btn good" data-rating="good">Good</button>
+          <button class="rating-btn easy" data-rating="easy">Easy</button>
+        </div>
+
+        <button class="secondary-btn review-back-btn" id="backHomeFromReviewBtn" type="button">Back home</button>
+      </section>
+
+      <section class="screen" id="practiceScreen">
+        <div class="practice-list" id="practicePackList"></div>
+
+        <div class="empty-state" id="practiceEmptyState">
+          <h2>No exercise packs yet</h2>
+          <p>Import an exercise pack to start practicing.</p>
+        </div>
+      </section>
+
+      <section class="screen" id="practiceSessionScreen">
+        <div class="practice-question-card">
+          <p class="muted" id="practiceProgress">No practice session</p>
+          <h2 id="practiceQuestion">Choose a pack to start practicing.</h2>
+          <div class="practice-options" id="practiceOptions"></div>
+          <div class="practiceFeedback" id="practiceFeedback" hidden></div>
+        </div>
+
+        <div class="session-actions">
+          <button class="secondary-btn" id="backToPacksBtn" type="button">Back to packs</button>
+          <button class="primary-btn" id="nextPracticeBtn" hidden>Next</button>
+        </div>
+      </section>
+
+      <section class="screen" id="wordsScreen">
+        <div class="toolbar">
+          <input id="wordSearchInput" type="search" placeholder="Search words..." />
+          <button class="small-btn" id="addWordBtn">Add</button>
+        </div>
+
+        <div class="empty-state">
+          <h2>No words yet</h2>
+          <p>Import your first vocabulary pack or add a word manually.</p>
+        </div>
+      </section>
+
+      <section class="screen" id="wordFormScreen">
+        <form class="word-form" id="wordForm">
+          <input type="hidden" id="wordIdInput" />
+
+          <label>
+            Word
+            <input id="wordInput" type="text" autocomplete="off" required />
+          </label>
+
+          <label>
+            Meaning
+            <textarea id="meaningInput" rows="4" required></textarea>
+          </label>
+
+          <label>
+            Example
+            <textarea id="exampleInput" rows="3"></textarea>
+          </label>
+
+          <label>
+            Tags
+            <input id="tagsInput" type="text" placeholder="emotion, verb, book" />
+          </label>
+
+          <label>
+            Source
+            <input id="sourceInput" type="text" placeholder="Book, article, GPT batch..." />
+          </label>
+
+          <div class="form-actions">
+            <button class="primary-btn" type="submit">Save word</button>
+            <button class="danger-btn" id="deleteWordBtn" type="button" hidden>Delete</button>
+            <button class="secondary-btn" id="cancelWordBtn" type="button">Cancel</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="screen" id="importScreen">
+        <div class="stack">
+          <div class="import-card">
+            <h2>Import words</h2>
+            <p>Upload a JSON file with English words, meanings, examples, tags, and sources.</p>
+            <label class="file-btn">
+              Import words JSON
+              <input id="wordsJsonInput" type="file" accept="application/json,.json" />
+            </label>
+          </div>
+
+          <div class="import-card">
+            <h2>Import exercise pack</h2>
+            <p>Upload an English-only practice pack generated from your vocabulary.</p>
+            <label class="file-btn">
+              Import exercise pack JSON
+              <input id="exercisePackJsonInput" type="file" accept="application/json,.json" />
+            </label>
+          </div>
+          <div class="import-card">
+            <h2>Paste JSON</h2>
+            <p>Paste words, exercise packs, or backup JSON directly from ChatGPT.</p>
+            <textarea id="pasteJsonInput" class="paste-json-input" rows="8" placeholder="Paste JSON here..."></textarea>
+            <button class="secondary-btn" id="pasteJsonImportBtn" type="button">Import pasted JSON</button>
+          </div>
+
+          <div class="import-card">
+            <h2>Backup</h2>
+            <p>Export or restore all local data with a JSON backup file.</p>
+            <button class="secondary-btn" id="exportBackupBtn">Export backup</button>
+
+            <label class="file-btn backup-import-btn">
+              Import backup JSON
+              <input id="backupJsonInput" type="file" accept="application/json,.json" />
+            </label>
+          </div>
+
+          <div class="import-card danger-card">
+            <h2>Danger zone</h2>
+            <p>Clear all local words, exercise packs, exercises, and practice history.</p>
+            <button class="danger-btn" id="clearAllDataBtn" type="button">Clear all data</button>
+          </div>
+          <div class="import-result" id="importResult" hidden></div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-screen="homeScreen">Home</button>
+      <button class="nav-btn" data-screen="reviewScreen">Review</button>
+      <button class="nav-btn" data-screen="practiceScreen">Practice</button>
+      <button class="nav-btn" data-screen="wordsScreen">Words</button>
+      <button class="nav-btn" data-screen="importScreen">Import</button>
+    </nav>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
