@@ -1,7 +1,7 @@
 const DB_NAME = "english-srs-db";
 const DB_VERSION = 1;
-const APP_VERSION = "1.0.0";
-const CACHE_VERSION_LABEL = "english-srs-v4";
+const APP_VERSION = "1.1.0";
+const CACHE_VERSION_LABEL = "english-srs-v5";
 const SUPPORTED_EXERCISE_TYPES = [
   "choose_sentence",
   "fill_blank",
@@ -145,6 +145,7 @@ const selectedJsonFileName = document.querySelector("#selectedJsonFileName");
 const importJsonBtn = document.querySelector("#importJsonBtn");
 const exportBackupBtn = document.querySelector("#exportBackupBtn");
 const exportWeakWordsPromptBtn = document.querySelector("#exportWeakWordsPromptBtn");
+const refreshAppBtn = document.querySelector("#refreshAppBtn");
 const clearAllDataBtn = document.querySelector("#clearAllDataBtn");
 const importResultEl = document.querySelector("#importResult");
 const inlineImportResultEl = document.querySelector("#inlineImportResult");
@@ -1938,6 +1939,35 @@ async function importBackupFromJSON(data) {
   return result;
 }
 
+async function refreshApp() {
+  const confirmed = confirm("Refresh the app and check for updates? Your words and progress will stay on this device.");
+  if (!confirmed) return;
+
+  try {
+    if ("serviceWorker" in navigator) {
+      const registration = await navigator.serviceWorker.getRegistration();
+
+      if (registration) {
+        await registration.update();
+      }
+    }
+
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+
+      await Promise.all(
+        cacheNames
+          .filter(name => name.startsWith("english-srs"))
+          .map(name => caches.delete(name))
+      );
+    }
+  } catch (error) {
+    console.log("App refresh failed:", error);
+  }
+
+  window.location.reload();
+}
+
 async function clearAllData() {
   const firstConfirm = confirm("Clear all local data? This will delete all words, packs, exercises, and practice history.");
   if (!firstConfirm) return;
@@ -2100,6 +2130,7 @@ async function initApp() {
   backFromHelpBtn.addEventListener("click", () => {
     showScreen("importScreen");
   });
+  refreshAppBtn.addEventListener("click", refreshApp);
   clearAllDataBtn.addEventListener("click", clearAllData);
   exportBackupBtn.addEventListener("click", exportBackup);
   exportWeakWordsPromptBtn.addEventListener("click", exportWeakWordsPrompt);

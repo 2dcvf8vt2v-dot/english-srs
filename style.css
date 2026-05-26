@@ -1365,3 +1365,28 @@ input[type="search"] {
     margin-top: 10px;
   }
 }
+
+/* Maintenance buttons should never overlap. */
+.maintenance-card .secondary-btn,
+.maintenance-card .danger-btn,
+#importScreen .danger-card .secondary-btn,
+#importScreen .danger-card .danger-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+.maintenance-card .secondary-btn + .danger-btn,
+#importScreen .danger-card .secondary-btn + .danger-btn {
+  margin-top: 14px;
+}
+
+.maintenance-card .app-version,
+#importScreen .danger-card .app-version,
+#importScreen .danger-card #appVersionText {
+  display: block;
+  margin-top: 14px;
+}

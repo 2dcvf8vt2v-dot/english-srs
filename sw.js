@@ -1,4 +1,4 @@
-const CACHE_NAME = "english-srs-v4";
+const CACHE_NAME = "english-srs-v5";
 
 const FILES_TO_CACHE = [
   "./",
