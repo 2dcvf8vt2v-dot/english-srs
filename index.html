@@ -32,6 +32,13 @@
           <button class="primary-btn" id="letsGetStartedBtn" type="button">Let’s get started</button>
         </div>
 
+        <div class="hero-card install-tip-card" id="installTipCard" hidden>
+          <p class="muted">Install app</p>
+          <h2>Add English SRS to your Home Screen</h2>
+          <p>On iPhone: tap Share, choose Add to Home Screen, then open the app from your Home Screen.</p>
+          <button class="secondary-btn" id="dismissInstallTipBtn" type="button">Got it</button>
+        </div>
+
         <div class="home-grid">
           <div class="home-card review-home-card">
             <p class="muted">Today</p>
@@ -87,12 +94,12 @@
             <label class="smart-size-label">
               Session size
               <select id="smartPracticeLimitSelect">
-                <option value="10">10 exercises</option>
-                <option value="20" selected>20 exercises</option>
-                <option value="30">30 exercises</option>
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="30">30</option>
               </select>
             </label>
-            <button class="secondary-btn" id="startSmartPracticeBtn" type="button">Start</button>
+            <button class="secondary-btn compact-start-btn" id="startSmartPracticeBtn" type="button">Go</button>
           </div>
         </div>
 
@@ -109,12 +116,12 @@
             <label class="smart-size-label">
               Session size
               <select id="weakPracticeLimitSelect">
-                <option value="10" selected>10 exercises</option>
-                <option value="20">20 exercises</option>
-                <option value="30">30 exercises</option>
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
               </select>
             </label>
-            <button class="secondary-btn" id="startWeakPracticeBtn" type="button">Start weak practice</button>
+            <button class="secondary-btn compact-start-btn" id="startWeakPracticeBtn" type="button">Go</button>
           </div>
           <div id="weakWordsList" class="weak-words-list"></div>
         </div>

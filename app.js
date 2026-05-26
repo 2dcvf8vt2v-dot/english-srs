@@ -152,6 +152,8 @@ const appVersionTextEl = document.querySelector("#appVersionText");
 const topHelpBtn = document.querySelector("#topHelpBtn");
 const letsGetStartedBtn = document.querySelector("#letsGetStartedBtn");
 const onboardingCard = document.querySelector("#onboardingCard");
+const installTipCard = document.querySelector("#installTipCard");
+const dismissInstallTipBtn = document.querySelector("#dismissInstallTipBtn");
 const backFromHelpBtn = document.querySelector("#backFromHelpBtn");
 const pasteJsonInput = document.querySelector("#pasteJsonInput");
 const wordSearchInput = document.querySelector("#wordSearchInput");
@@ -532,6 +534,10 @@ function showScreen(screenId) {
 
   if (topHelpBtn) {
     topHelpBtn.hidden = !(screenId === "homeScreen" || screenId === "importScreen");
+  }
+
+  if (screenId === "homeScreen") {
+    renderInstallTip();
   }
 }
 
@@ -1253,6 +1259,35 @@ function showButtonCopied(button) {
   }, 1400);
 }
 
+function showManualCopyPrompt(text, button) {
+  document.querySelectorAll(".manual-copy-card").forEach(card => card.remove());
+
+  const card = document.createElement("div");
+  card.className = "manual-copy-card";
+  card.innerHTML = `
+    <strong>Copy manually</strong>
+    <p>Auto-copy is blocked by this browser. Tap the text below, select all, then copy.</p>
+    <textarea readonly></textarea>
+  `;
+
+  const textarea = card.querySelector("textarea");
+  textarea.value = text;
+
+  if (button?.parentElement) {
+    button.parentElement.insertAdjacentElement("afterend", card);
+  } else if (inlineImportResultEl) {
+    inlineImportResultEl.hidden = false;
+    inlineImportResultEl.innerHTML = "";
+    inlineImportResultEl.appendChild(card);
+  }
+
+  window.setTimeout(() => {
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+  }, 50);
+}
+
 function fallbackCopyText(text) {
   const textarea = document.createElement("textarea");
   textarea.value = text;
@@ -1292,12 +1327,7 @@ async function copyPromptToClipboard(text, button) {
       fallbackCopyText(text);
       showButtonCopied(button);
     } catch (fallbackError) {
-      showImportResult({
-        typeLabel: "Prompt copy failed",
-        imported: 0,
-        skippedDuplicates: 0,
-        errors: ["Could not copy prompt automatically. Try opening the app from the HTTPS GitHub Pages link, then tap the copy button again."]
-      }, { inline: true });
+      showManualCopyPrompt(text, button);
     }
   }
 }
@@ -1960,6 +1990,18 @@ function escapeHTML(value) {
     .replaceAll("'", "&#039;");
 }
 
+function isRunningStandalone() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
+function shouldShowInstallTip() {
+  return !isRunningStandalone() && localStorage.getItem("englishSrsInstallTipDismissed") !== "true";
+}
+
+function renderInstallTip() {
+  installTipCard.hidden = !shouldShowInstallTip();
+}
+
 async function initApp() {
   appVersionTextEl.textContent = `English SRS v${APP_VERSION}\nCache: ${CACHE_VERSION_LABEL}`;
 
@@ -1970,6 +2012,7 @@ async function initApp() {
   await renderPracticePacks();
   await renderWeakWords();
   await renderExerciseCoverage();
+  renderInstallTip();
 
   addWordBtn.addEventListener("click", openNewWordForm);
   wordForm.addEventListener("submit", handleWordFormSubmit);
@@ -2049,6 +2092,10 @@ async function initApp() {
   });
   letsGetStartedBtn.addEventListener("click", () => {
     showScreen("helpScreen");
+  });
+  dismissInstallTipBtn.addEventListener("click", () => {
+    localStorage.setItem("englishSrsInstallTipDismissed", "true");
+    renderInstallTip();
   });
   backFromHelpBtn.addEventListener("click", () => {
     showScreen("importScreen");

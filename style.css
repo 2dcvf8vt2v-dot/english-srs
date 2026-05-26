@@ -1169,3 +1169,199 @@ input[type="search"] {
 .review-back-btn {
   margin-top: 14px;
 }
+
+.manual-copy-card {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+}
+
+.manual-copy-card strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-size: 16px;
+}
+
+.manual-copy-card p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.manual-copy-card textarea {
+  width: 100%;
+  min-height: 180px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.35;
+  resize: vertical;
+}
+
+.practice-control-row {
+  grid-template-columns: minmax(82px, 118px) auto;
+  justify-content: start;
+}
+
+.practice-control-row select {
+  width: 100%;
+  text-align: center;
+  text-align-last: center;
+  padding-left: 14px;
+  padding-right: 32px;
+}
+
+.practice-control-row .compact-start-btn {
+  width: auto;
+  min-width: 82px;
+  padding-left: 22px;
+  padding-right: 22px;
+  justify-self: start;
+}
+
+.install-tip-card h2 {
+  margin-bottom: 10px;
+}
+
+.install-tip-card p:not(.muted) {
+  color: var(--muted);
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 430px) {
+  .practice-control-row {
+    grid-template-columns: minmax(76px, 108px) auto;
+    gap: 10px;
+  }
+
+  .practice-control-row .compact-start-btn {
+    min-width: 76px;
+  }
+}
+
+/* Final Practice screen button cleanup. */
+#practiceScreen .practice-control-row {
+  display: grid;
+  grid-template-columns: 108px 108px;
+  justify-content: start;
+  align-items: end;
+  gap: 10px;
+}
+
+#practiceScreen .practice-control-row .smart-size-label {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+#practiceScreen .practice-control-row select,
+#practiceScreen .practice-control-row .compact-start-btn {
+  height: 54px;
+  min-height: 54px;
+  border-radius: 16px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+#practiceScreen .practice-control-row select {
+  width: 108px;
+  padding: 0 30px 0 14px;
+  text-align: center;
+  text-align-last: center;
+}
+
+#practiceScreen .practice-control-row .compact-start-btn {
+  width: 108px;
+  min-width: 108px;
+  padding: 0 18px;
+  margin: 0;
+  justify-self: start;
+}
+
+#practiceScreen .weak-words-toggle-btn {
+  height: 46px;
+  min-height: 46px;
+  min-width: 86px;
+  width: auto;
+  padding: 0 16px;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+#practiceScreen .practice-pack-card {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 82px;
+  gap: 12px;
+  align-items: center;
+  padding: 18px;
+}
+
+#practiceScreen .practice-pack-card h3 {
+  margin: 0 0 8px;
+  line-height: 1.08;
+}
+
+#practiceScreen .practice-pack-card p {
+  margin: 0 0 10px;
+}
+
+#practiceScreen .pack-select {
+  align-self: center;
+  justify-self: center;
+}
+
+#practiceScreen .pack-select input {
+  width: 18px;
+  height: 18px;
+}
+
+#practiceScreen .pack-actions {
+  display: grid;
+  gap: 8px;
+  width: 82px;
+  justify-self: end;
+}
+
+#practiceScreen .pack-actions .small-btn,
+#practiceScreen .pack-actions .pack-delete-btn {
+  width: 82px;
+  min-height: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+#practiceScreen .pack-meta {
+  gap: 6px;
+}
+
+#practiceScreen .pack-meta span {
+  font-size: 12px;
+  line-height: 1;
+}
+
+@media (max-width: 360px) {
+  #practiceScreen .practice-pack-card {
+    grid-template-columns: 22px minmax(0, 1fr);
+  }
+
+  #practiceScreen .pack-actions {
+    grid-column: 2;
+    grid-template-columns: 82px 82px;
+    width: auto;
+    justify-self: start;
+    margin-top: 10px;
+  }
+}
