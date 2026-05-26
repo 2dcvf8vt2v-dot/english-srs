@@ -1251,17 +1251,52 @@ function showButtonCopied(button) {
   }, 1400);
 }
 
+function fallbackCopyText(text) {
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "0";
+  textarea.style.top = "0";
+  textarea.style.width = "1px";
+  textarea.style.height = "1px";
+  textarea.style.opacity = "0";
+  textarea.style.zIndex = "-1";
+
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+
+  const copied = document.execCommand("copy");
+  document.body.removeChild(textarea);
+
+  if (!copied) {
+    throw new Error("Fallback copy failed");
+  }
+}
+
 async function copyPromptToClipboard(text, button) {
   try {
-    await navigator.clipboard.writeText(text);
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      fallbackCopyText(text);
+    }
+
     showButtonCopied(button);
   } catch (error) {
-    showImportResult({
-      typeLabel: "Prompt copy failed",
-      imported: 0,
-      skippedDuplicates: 0,
-      errors: ["Could not copy prompt. Try using a supported browser."]
-    });
+    try {
+      fallbackCopyText(text);
+      showButtonCopied(button);
+    } catch (fallbackError) {
+      showImportResult({
+        typeLabel: "Prompt copy failed",
+        imported: 0,
+        skippedDuplicates: 0,
+        errors: ["Could not copy prompt automatically. Try opening the app from the HTTPS GitHub Pages link, then tap the copy button again."]
+      }, { inline: true });
+    }
   }
 }
 
