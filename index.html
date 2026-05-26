@@ -20,29 +20,41 @@
         <p class="eyebrow">English SRS</p>
         <h1 id="screenTitle">Home</h1>
       </div>
+      <button class="top-help-btn" id="topHelpBtn" type="button">Guide</button>
     </header>
 
     <main>
       <section class="screen active" id="homeScreen">
-        <div class="hero-card">
-          <p class="muted">Today</p>
-          <h2><span id="dueCount">0</span> words due</h2>
-          <button class="primary-btn" id="startReviewBtn">Start review</button>
+        <div class="hero-card onboarding-card" id="onboardingCard" hidden>
+          <p class="muted">New here?</p>
+          <h2>Set up your first words and exercises</h2>
+          <p>Follow the quick guide to generate words, import JSON, and start learning.</p>
+          <button class="primary-btn" id="letsGetStartedBtn" type="button">Let’s get started</button>
         </div>
 
-        <div class="stats-grid">
-          <div class="stat-card">
-            <span id="totalWords">0</span>
-            <p>Total words</p>
+        <div class="home-grid">
+          <div class="home-card review-home-card">
+            <p class="muted">Today</p>
+            <h2><span id="dueCount">0</span> words due</h2>
+            <button class="primary-btn" id="startReviewBtn">Start review</button>
           </div>
 
-          <div class="stat-card">
-            <span id="totalPacks">0</span>
-            <p>Exercise packs</p>
+          <div class="home-card">
+            <h2>Smart practice</h2>
+            <p>Practice the words that need the most attention.</p>
+            <button class="secondary-btn" id="homeSmartPracticeBtn" type="button">Start smart practice</button>
+          </div>
+
+          <div class="home-card">
+            <h2>Weak words</h2>
+            <p id="homeWeakWordsSummary">No weak words yet.</p>
+            <button class="secondary-btn" id="homeOpenPracticeBtn" type="button">Open practice</button>
           </div>
         </div>
 
-        <button class="secondary-btn" data-screen="practiceScreen">Practice</button>
+        <p class="home-stats-line" id="homeStatsLine">0 words · 0 packs · 0 weak</p>
+        <span id="totalWords" hidden>0</span>
+        <span id="totalPacks" hidden>0</span>
       </section>
 
       <section class="screen" id="reviewScreen">
@@ -68,6 +80,45 @@
       </section>
 
       <section class="screen" id="practiceScreen">
+        <div class="import-card smart-practice-card">
+          <h2>Smart practice</h2>
+          <p>Practice the words that need the most attention.</p>
+          <div class="practice-control-row">
+            <label class="smart-size-label">
+              Session size
+              <select id="smartPracticeLimitSelect">
+                <option value="10">10 exercises</option>
+                <option value="20" selected>20 exercises</option>
+                <option value="30">30 exercises</option>
+              </select>
+            </label>
+            <button class="secondary-btn" id="startSmartPracticeBtn" type="button">Start</button>
+          </div>
+        </div>
+
+        <div class="weak-words-card">
+          <div class="weak-words-header-row">
+            <div>
+              <h2>Weak words</h2>
+              <p>Words you often miss in practice.</p>
+            </div>
+            <button class="secondary-btn weak-words-toggle-btn" id="toggleWeakWordsBtn" type="button">Show</button>
+          </div>
+          <p class="weak-words-summary" id="weakWordsPracticeSummary">No weak words yet.</p>
+          <div class="practice-control-row weak-practice-controls">
+            <label class="smart-size-label">
+              Session size
+              <select id="weakPracticeLimitSelect">
+                <option value="10" selected>10 exercises</option>
+                <option value="20">20 exercises</option>
+                <option value="30">30 exercises</option>
+              </select>
+            </label>
+            <button class="secondary-btn" id="startWeakPracticeBtn" type="button">Start weak practice</button>
+          </div>
+          <div id="weakWordsList" class="weak-words-list"></div>
+        </div>
+
         <div class="practice-list" id="practicePackList"></div>
 
         <div class="empty-state" id="practiceEmptyState">
@@ -142,46 +193,139 @@
       <section class="screen" id="importScreen">
         <div class="stack">
           <div class="import-card">
-            <h2>Import words</h2>
-            <p>Upload a JSON file with English words, meanings, examples, tags, and sources.</p>
-            <label class="file-btn">
-              Import words JSON
-              <input id="wordsJsonInput" type="file" accept="application/json,.json" />
+            <h2>Generate with GPT</h2>
+            <p>Copy a prompt, paste it into GPT, then import the JSON result here.</p>
+            <label class="prompt-builder-label">
+              Source name
+              <input id="promptSourceInput" type="text" placeholder="Role Model, The Long Game, Article name..." />
             </label>
+            <label class="prompt-builder-label">
+              Word list or word objects
+              <textarea id="promptWordsInput" class="prompt-builder-input" rows="8" placeholder="Paste words here, one per line, or paste exported word objects for exercises..."></textarea>
+            </label>
+            <div class="prompt-actions">
+              <button class="secondary-btn" id="copyWordsPromptBtn" type="button">Copy words prompt</button>
+              <button class="secondary-btn" id="copyExercisePromptBtn" type="button">Copy exercise pack prompt</button>
+            </div>
+            <div class="prompt-mini-card">
+              <h3>Missing exercises</h3>
+              <p id="exerciseCoverageText">Checking exercise coverage...</p>
+              <div class="prompt-mini-actions">
+                <label class="prompt-builder-label prompt-mini-label">
+                  Batch size
+                  <select id="missingExerciseBatchSizeSelect">
+                    <option value="10" selected>10 words</option>
+                    <option value="20">20 words</option>
+                  </select>
+                </label>
+                <button class="secondary-btn" id="copyMissingExercisesPromptBtn" type="button">Copy prompt</button>
+              </div>
+            </div>
+            <div class="prompt-mini-card">
+              <h3>Weak words</h3>
+              <p id="weakWordsExportSummary">Checking weak words...</p>
+              <div class="prompt-mini-actions">
+                <label class="prompt-builder-label prompt-mini-label">
+                  Batch size
+                  <select id="weakWordsBatchSizeSelect">
+                    <option value="10" selected>10 words</option>
+                    <option value="20">20 words</option>
+                  </select>
+                </label>
+                <button class="secondary-btn weak-words-export-btn" id="exportWeakWordsPromptBtn" type="button">Copy prompt</button>
+              </div>
+            </div>
           </div>
 
           <div class="import-card">
-            <h2>Import exercise pack</h2>
-            <p>Upload an English-only practice pack generated from your vocabulary.</p>
-            <label class="file-btn">
-              Import exercise pack JSON
-              <input id="exercisePackJsonInput" type="file" accept="application/json,.json" />
-            </label>
-          </div>
-          <div class="import-card">
-            <h2>Paste JSON</h2>
-            <p>Paste words, exercise packs, or backup JSON directly from ChatGPT.</p>
+            <h2>Import data</h2>
+            <p>Paste JSON or choose a JSON file. The app will detect words, exercise packs, or backups.</p>
             <textarea id="pasteJsonInput" class="paste-json-input" rows="8" placeholder="Paste JSON here..."></textarea>
-            <button class="secondary-btn" id="pasteJsonImportBtn" type="button">Import pasted JSON</button>
+            <label class="file-btn generic-json-file" id="genericJsonFileLabel">
+              <span id="genericJsonFileButtonText">Choose JSON file</span>
+              <input id="genericJsonInput" type="file" accept="application/json,.json" />
+            </label>
+            <p class="selected-file-name" id="selectedJsonFileName" hidden></p>
+            <button class="secondary-btn" id="importJsonBtn" type="button">Import JSON</button>
+            <div class="inline-import-result" id="inlineImportResult" hidden></div>
           </div>
 
           <div class="import-card">
             <h2>Backup</h2>
-            <p>Export or restore all local data with a JSON backup file.</p>
+            <p>Export all local data with a JSON backup file.</p>
             <button class="secondary-btn" id="exportBackupBtn">Export backup</button>
-
-            <label class="file-btn backup-import-btn">
-              Import backup JSON
-              <input id="backupJsonInput" type="file" accept="application/json,.json" />
-            </label>
           </div>
 
-          <div class="import-card danger-card">
-            <h2>Danger zone</h2>
+          <div class="import-card danger-card maintenance-card">
+            <h2>Maintenance</h2>
             <p>Clear all local words, exercise packs, exercises, and practice history.</p>
             <button class="danger-btn" id="clearAllDataBtn" type="button">Clear all data</button>
+            <div class="app-version" id="appVersionText"></div>
           </div>
           <div class="import-result" id="importResult" hidden></div>
+        </div>
+      </section>
+
+      <section class="screen" id="helpScreen">
+        <div class="help-stack">
+          <div class="import-card">
+            <h2>First setup</h2>
+            <p>English SRS works best in this order:</p>
+            <ol>
+              <li>Generate words JSON with GPT.</li>
+              <li>Import the words JSON.</li>
+              <li>Generate exercise pack JSON.</li>
+              <li>Import the exercise pack JSON.</li>
+              <li>Learn with Review and Practice.</li>
+              <li>Export a backup sometimes.</li>
+            </ol>
+          </div>
+
+          <div class="import-card">
+            <h2>Add words</h2>
+            <p>Paste a word list into Generate with GPT, add a source name, then copy the words prompt.</p>
+            <p>Send the prompt to GPT. GPT should return a words JSON.</p>
+            <p>Paste that JSON into Import data and press Import JSON.</p>
+          </div>
+
+          <div class="import-card">
+            <h2>Add exercises</h2>
+            <p>After importing words, check Exercise coverage.</p>
+            <p>If some words still need exercises, choose a batch size and copy the missing exercises prompt.</p>
+            <p>Send it to GPT, then import the returned exercise pack JSON.</p>
+          </div>
+
+          <div class="import-card">
+            <h2>Learn every day</h2>
+            <p>Review uses spaced repetition cards.</p>
+            <p>Smart Practice chooses useful exercises from selected packs.</p>
+            <p>Weak Practice focuses on words you recently missed.</p>
+            <p>Pack Practice starts one specific exercise pack.</p>
+          </div>
+
+          <div class="import-card">
+            <h2>Fix weak words</h2>
+            <p>Weak words are based on recent Practice answers, not your whole history.</p>
+            <p>A word can become weak if you miss it recently or your recent accuracy is low.</p>
+            <p>If your last 3 answers for a word are correct, it leaves Weak words.</p>
+            <p>Use Copy weak words prompt to generate fresh exercises for weak words.</p>
+          </div>
+
+          <div class="import-card">
+            <h2>Backup and restore</h2>
+            <p>Your data is stored locally on this device. It does not sync automatically.</p>
+            <p>Export backup saves your words, exercise packs, exercises, attempts, and progress.</p>
+            <p>To restore data, import the backup JSON through Import data.</p>
+          </div>
+
+          <div class="import-card">
+            <h2>Offline and updates</h2>
+            <p>The app works offline after it has loaded once from the hosted site.</p>
+            <p>When the app updates, open it with internet, wait a moment, close it, and open it again.</p>
+            <p>Your words and progress should stay on the device.</p>
+          </div>
+
+          <button class="secondary-btn" id="backFromHelpBtn" type="button">Back to Import</button>
         </div>
       </section>
     </main>

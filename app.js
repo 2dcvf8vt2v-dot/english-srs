@@ -1,5 +1,110 @@
 const DB_NAME = "english-srs-db";
 const DB_VERSION = 1;
+const APP_VERSION = "1.0.0";
+const CACHE_VERSION_LABEL = "english-srs-v4";
+const SUPPORTED_EXERCISE_TYPES = [
+  "choose_sentence",
+  "fill_blank",
+  "choose_meaning",
+  "choose_word"
+];
+const WORDS_JSON_PROMPT = `Generate English SRS vocabulary JSON.
+
+Return ONLY valid JSON.
+No markdown.
+No comments.
+No explanations.
+Everything must be in English.
+Do not translate anything into Russian.
+Use simple, natural English meanings.
+Meanings should explain the word clearly, not sound like a dictionary dump.
+Examples should be natural and useful.
+For phrases and idioms, explain the whole phrase.
+Keep the original word or phrase spelling, but fix obvious capitalization if needed.
+Skip proper names unless they are useful as vocabulary.
+If a word has many meanings, choose the most common meaning.
+Tags should be short and useful.
+Use 2-5 tags per item.
+Do not include duplicate words.
+Do not include extra fields.
+Make sure the JSON can be parsed by JSON.parse().
+
+Use SOURCE_NAME as the source value.
+Use these words or phrases:
+PASTE_WORDS_HERE
+
+Return JSON in this shape:
+{
+  "app": "english-srs",
+  "type": "words",
+  "version": 1,
+  "words": [
+    {
+      "word": "target word or phrase",
+      "meaning": "clear English-only meaning, simple and useful",
+      "example": "natural example sentence using the word or phrase",
+      "tags": ["tag1", "tag2", "tag3"],
+      "source": "SOURCE_NAME"
+    }
+  ]
+}`;
+const EXERCISE_PACK_PROMPT = `Generate an English SRS exercise pack JSON.
+
+Return ONLY valid JSON.
+No markdown.
+No comments.
+No explanations.
+Everything must be in English.
+Do not translate anything into Russian.
+Generate 1 exercise per word.
+Use only these exercise types:
+- choose_sentence
+- fill_blank
+- choose_meaning
+- choose_word
+Mix the exercise types naturally.
+Exactly 4 options per exercise.
+The answer must exactly match one of the options.
+Do not add explanations.
+Do not add extra fields.
+Do not include duplicate words.
+Keep the target word exactly as provided.
+For phrases and idioms, test the meaning of the whole phrase.
+Distractors must be plausible, but clearly wrong.
+Avoid weird, unnatural, or overly academic sentences.
+Make examples useful for real reading comprehension.
+Do not use unescaped double quotes inside JSON strings.
+If quotes are needed inside a sentence, use single quotes.
+
+Use SOURCE_NAME in the pack name.
+Use these words or word objects:
+PASTE_WORDS_OR_WORD_OBJECTS_HERE
+
+Return JSON in this shape:
+{
+  "app": "english-srs",
+  "type": "exercisePack",
+  "version": 1,
+  "pack": {
+    "name": "SOURCE_NAME — Practice Pack 1",
+    "description": "English-only multiple choice practice based on imported vocabulary.",
+    "source": "GPT"
+  },
+  "exercises": [
+    {
+      "word": "target word or phrase",
+      "type": "choose_sentence",
+      "question": "Choose the sentence where 'target word' is used correctly.",
+      "options": [
+        "correct option",
+        "wrong option",
+        "wrong option",
+        "wrong option"
+      ],
+      "answer": "correct option"
+    }
+  ]
+}`;
 
 let db;
 
@@ -11,6 +116,10 @@ const dueCountEl = document.querySelector("#dueCount");
 const totalWordsEl = document.querySelector("#totalWords");
 const totalPacksEl = document.querySelector("#totalPacks");
 const startReviewBtn = document.querySelector("#startReviewBtn");
+const homeSmartPracticeBtn = document.querySelector("#homeSmartPracticeBtn");
+const homeOpenPracticeBtn = document.querySelector("#homeOpenPracticeBtn");
+const homeWeakWordsSummary = document.querySelector("#homeWeakWordsSummary");
+const homeStatsLine = document.querySelector("#homeStatsLine");
 const reviewCard = document.querySelector("#reviewCard");
 const reviewProgressEl = document.querySelector("#reviewProgress");
 const reviewWordEl = document.querySelector("#reviewWord");
@@ -20,14 +129,31 @@ const reviewMeaningEl = document.querySelector("#reviewMeaning");
 const reviewExampleEl = document.querySelector("#reviewExample");
 const reviewActionsEl = document.querySelector("#reviewActions");
 const backHomeFromReviewBtn = document.querySelector("#backHomeFromReviewBtn");
-const wordsJsonInput = document.querySelector("#wordsJsonInput");
-const exercisePackJsonInput = document.querySelector("#exercisePackJsonInput");
-const backupJsonInput = document.querySelector("#backupJsonInput");
+const copyWordsPromptBtn = document.querySelector("#copyWordsPromptBtn");
+const copyExercisePromptBtn = document.querySelector("#copyExercisePromptBtn");
+const promptSourceInput = document.querySelector("#promptSourceInput");
+const promptWordsInput = document.querySelector("#promptWordsInput");
+const exerciseCoverageText = document.querySelector("#exerciseCoverageText");
+const missingExerciseBatchSizeSelect = document.querySelector("#missingExerciseBatchSizeSelect");
+const copyMissingExercisesPromptBtn = document.querySelector("#copyMissingExercisesPromptBtn");
+const weakWordsExportSummary = document.querySelector("#weakWordsExportSummary");
+const weakWordsBatchSizeSelect = document.querySelector("#weakWordsBatchSizeSelect");
+const genericJsonInput = document.querySelector("#genericJsonInput");
+const genericJsonFileLabel = document.querySelector("#genericJsonFileLabel");
+const genericJsonFileButtonText = document.querySelector("#genericJsonFileButtonText");
+const selectedJsonFileName = document.querySelector("#selectedJsonFileName");
+const importJsonBtn = document.querySelector("#importJsonBtn");
 const exportBackupBtn = document.querySelector("#exportBackupBtn");
+const exportWeakWordsPromptBtn = document.querySelector("#exportWeakWordsPromptBtn");
 const clearAllDataBtn = document.querySelector("#clearAllDataBtn");
 const importResultEl = document.querySelector("#importResult");
+const inlineImportResultEl = document.querySelector("#inlineImportResult");
+const appVersionTextEl = document.querySelector("#appVersionText");
+const topHelpBtn = document.querySelector("#topHelpBtn");
+const letsGetStartedBtn = document.querySelector("#letsGetStartedBtn");
+const onboardingCard = document.querySelector("#onboardingCard");
+const backFromHelpBtn = document.querySelector("#backFromHelpBtn");
 const pasteJsonInput = document.querySelector("#pasteJsonInput");
-const pasteJsonImportBtn = document.querySelector("#pasteJsonImportBtn");
 const wordSearchInput = document.querySelector("#wordSearchInput");
 const addWordBtn = document.querySelector("#addWordBtn");
 const wordForm = document.querySelector("#wordForm");
@@ -41,6 +167,13 @@ const deleteWordBtn = document.querySelector("#deleteWordBtn");
 const cancelWordBtn = document.querySelector("#cancelWordBtn");
 const practicePackList = document.querySelector("#practicePackList");
 const practiceEmptyState = document.querySelector("#practiceEmptyState");
+const startSmartPracticeBtn = document.querySelector("#startSmartPracticeBtn");
+const smartPracticeLimitSelect = document.querySelector("#smartPracticeLimitSelect");
+const weakPracticeLimitSelect = document.querySelector("#weakPracticeLimitSelect");
+const startWeakPracticeBtn = document.querySelector("#startWeakPracticeBtn");
+const toggleWeakWordsBtn = document.querySelector("#toggleWeakWordsBtn");
+const weakWordsPracticeSummary = document.querySelector("#weakWordsPracticeSummary");
+const weakWordsList = document.querySelector("#weakWordsList");
 const practiceProgressEl = document.querySelector("#practiceProgress");
 const practiceQuestionEl = document.querySelector("#practiceQuestion");
 const practiceOptionsEl = document.querySelector("#practiceOptions");
@@ -51,6 +184,7 @@ let practiceQueue = [];
 let currentPracticeExercise = null;
 let practiceTotal = 0;
 let isPracticeAnswered = false;
+let isWeakWordsListVisible = false;
 async function renderPracticePacks() {
   const packs = await getAll("exercisePacks");
   const attempts = await getAll("practiceAttempts");
@@ -67,15 +201,21 @@ async function renderPracticePacks() {
       const accuracy = packAttempts.length
         ? Math.round((correctAttempts / packAttempts.length) * 100)
         : null;
+      const shouldShowDescription =
+        pack.description &&
+        pack.description !== "English-only multiple choice practice based on imported vocabulary.";
 
       const card = document.createElement("article");
       card.className = "practice-pack-card";
       card.dataset.packId = pack.id;
 
       card.innerHTML = `
+        <label class="pack-select">
+          <input type="checkbox" data-pack-select="true" value="${escapeHTML(pack.id)}" checked />
+        </label>
         <div>
           <h3>${escapeHTML(pack.name)}</h3>
-          ${pack.description ? `<p>${escapeHTML(pack.description)}</p>` : ""}
+          ${shouldShowDescription ? `<p>${escapeHTML(pack.description)}</p>` : ""}
           <div class="pack-meta">
             <span>${pack.exerciseCount || 0} exercises</span>
             ${pack.source ? `<span>${escapeHTML(pack.source)}</span>` : ""}
@@ -114,7 +254,10 @@ async function deleteExercisePack(packId) {
 
   await deleteItem("exercisePacks", packId);
   await refreshHomeStats();
+  await renderHomeWeakWordsSummary();
   await renderPracticePacks();
+  await renderWeakWords();
+  await renderExerciseCoverage();
 }
 
 async function getExercisesByPackId(packId) {
@@ -130,6 +273,132 @@ async function startPracticePack(packId) {
   const exercises = await getExercisesByPackId(packId);
 
   practiceQueue = shuffleArray(exercises);
+  practiceTotal = practiceQueue.length;
+  currentPracticeExercise = null;
+  isPracticeAnswered = false;
+
+  showScreen("practiceSessionScreen");
+  showNextPracticeExercise();
+}
+
+async function startSmartPractice() {
+  const exercises = await getAll("exercises");
+  const limit = Number(smartPracticeLimitSelect.value) || 20;
+  const selectedPackIds = new Set(
+    [...practicePackList.querySelectorAll('[data-pack-select="true"]:checked')]
+      .map(input => input.value)
+  );
+
+  if (!selectedPackIds.size) {
+    showScreen("practiceScreen");
+    alert("Select at least one pack for Smart Practice.");
+    return;
+  }
+
+  const selectedPackExercises = exercises.filter(exercise => selectedPackIds.has(exercise.packId));
+
+  if (!selectedPackExercises.length) {
+    showScreen("practiceScreen");
+    alert("No exercises available in selected packs.");
+    return;
+  }
+
+  const words = await getAll("words");
+  const attempts = await getAll("practiceAttempts");
+  const wordsById = new Map(words.map(word => [word.id, word]));
+  const attemptsByWordId = new Map();
+  const attemptsByExerciseId = new Map();
+  const now = Date.now();
+  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+
+  for (const attempt of attempts) {
+    if (attempt.wordId) {
+      if (!attemptsByWordId.has(attempt.wordId)) {
+        attemptsByWordId.set(attempt.wordId, []);
+      }
+
+      attemptsByWordId.get(attempt.wordId).push(attempt);
+    }
+
+    if (attempt.exerciseId) {
+      if (!attemptsByExerciseId.has(attempt.exerciseId)) {
+        attemptsByExerciseId.set(attempt.exerciseId, []);
+      }
+
+      attemptsByExerciseId.get(attempt.exerciseId).push(attempt);
+    }
+  }
+
+  const selected = selectedPackExercises
+    .map(exercise => {
+      const word = wordsById.get(exercise.wordId);
+      const wordAttempts = attemptsByWordId.get(exercise.wordId) || [];
+      const exerciseAttempts = attemptsByExerciseId.get(exercise.id) || [];
+      const latestWordAttempt = wordAttempts
+        .slice()
+        .sort((a, b) => b.createdAt - a.createdAt)[0];
+      const latestExerciseAttempt = exerciseAttempts
+        .slice()
+        .sort((a, b) => b.createdAt - a.createdAt)[0];
+      const wrongAttempts = wordAttempts.filter(attempt => !attempt.isCorrect).length;
+      let score = 0;
+
+      if (word && word.dueDate <= now) score += 100;
+      if (latestWordAttempt && !latestWordAttempt.isCorrect) score += 80;
+      score += Math.min(wrongAttempts * 15, 60);
+      if (!exerciseAttempts.length) score += 30;
+      if (!latestExerciseAttempt || latestExerciseAttempt.createdAt < sevenDaysAgo) score += 20;
+      if (word && word.repetitions === 0) score += 10;
+
+      return {
+        exercise,
+        score
+      };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(item => item.exercise);
+
+  practiceQueue = shuffleArray(selected);
+  practiceTotal = practiceQueue.length;
+  currentPracticeExercise = null;
+  isPracticeAnswered = false;
+
+  showScreen("practiceSessionScreen");
+  showNextPracticeExercise();
+}
+
+async function startWeakPractice() {
+  const weakWords = await getWeakWords();
+
+  if (!weakWords.length) {
+    showScreen("practiceScreen");
+    alert("No weak words yet.");
+    return;
+  }
+
+  const exercises = await getAll("exercises");
+  const weakWordIds = new Set(weakWords.map(word => word.id));
+  const weakWordsById = new Map(weakWords.map(word => [word.id, word]));
+  const matchingExercises = exercises.filter(exercise => weakWordIds.has(exercise.wordId));
+
+  if (!matchingExercises.length) {
+    showScreen("practiceScreen");
+    alert("No exercises available for weak words.");
+    return;
+  }
+
+  const limit = Number(weakPracticeLimitSelect.value) || 10;
+  const selected = matchingExercises
+    .map(exercise => ({
+      exercise,
+      wrongAttempts: weakWordsById.get(exercise.wordId)?.wrongAttempts || 0
+    }))
+    .sort((a, b) => b.wrongAttempts - a.wrongAttempts)
+    .slice(0, limit)
+    .map(item => item.exercise);
+
+  practiceQueue = shuffleArray(selected);
   practiceTotal = practiceQueue.length;
   currentPracticeExercise = null;
   isPracticeAnswered = false;
@@ -190,17 +459,11 @@ async function handlePracticeAnswer(selectedOption) {
     }
   });
 
-  practiceFeedbackEl.hidden = false;
-  practiceFeedbackEl.className = isCorrect ? "practiceFeedback correct" : "practiceFeedback wrong";
-  practiceFeedbackEl.innerHTML = isCorrect
-    ? "Correct"
-    : `
-      <strong>Wrong</strong>
-      <span>Correct answer:</span>
-      <p>${escapeHTML(currentPracticeExercise.answer)}</p>
-    `;
   await savePracticeAttempt(currentPracticeExercise, selectedOption, isCorrect);
+  await refreshHomeStats();
+  await renderHomeWeakWordsSummary();
   await renderPracticePacks();
+  await renderWeakWords();
 
   if (!isCorrect) {
     await makePracticeWordDue(currentPracticeExercise.wordId);
@@ -250,7 +513,8 @@ const titles = {
   practiceSessionScreen: "Practice",
   wordsScreen: "Words",
   wordFormScreen: "Word",
-  importScreen: "Import"
+  importScreen: "Import",
+  helpScreen: "Help"
 };
 
 function showScreen(screenId) {
@@ -263,6 +527,10 @@ function showScreen(screenId) {
   });
 
   screenTitle.textContent = titles[screenId] || "English SRS";
+
+  if (topHelpBtn) {
+    topHelpBtn.hidden = !(screenId === "homeScreen" || screenId === "importScreen");
+  }
 }
 
 document.addEventListener("click", event => {
@@ -447,6 +715,7 @@ async function addDemoWord() {
 async function refreshHomeStats() {
   const words = await getAll("words");
   const packs = await getAll("exercisePacks");
+  const weakWords = await getWeakWords();
 
   const now = Date.now();
   const dueWords = words.filter(word => word.dueDate <= now);
@@ -454,6 +723,20 @@ async function refreshHomeStats() {
   dueCountEl.textContent = dueWords.length;
   totalWordsEl.textContent = words.length;
   totalPacksEl.textContent = packs.length;
+  homeStatsLine.textContent = `${words.length} words · ${packs.length} packs · ${weakWords.length} weak`;
+  onboardingCard.hidden = !(words.length === 0 && packs.length === 0);
+}
+
+async function renderHomeWeakWordsSummary() {
+  const weakWords = await getWeakWords();
+
+  if (!weakWords.length) {
+    homeWeakWordsSummary.textContent = "No weak words yet.";
+    return;
+  }
+
+  const previewWords = weakWords.slice(0, 3).map(word => word.word).join(", ");
+  homeWeakWordsSummary.textContent = `${weakWords.length} words need attention: ${previewWords}`;
 }
 
 async function renderWordsList() {
@@ -757,6 +1040,10 @@ function validateImportedExercise(item, index) {
     return `Item ${index + 1}: missing type`;
   }
 
+  if (!SUPPORTED_EXERCISE_TYPES.includes(item.type.trim())) {
+    return `Item ${index + 1}: unsupported exercise type`;
+  }
+
   if (!item.question || typeof item.question !== "string") {
     return `Item ${index + 1}: missing question`;
   }
@@ -922,9 +1209,8 @@ async function importWordsFromJSON(data) {
   return result;
 }
 
-function showImportResult(result) {
-  importResultEl.hidden = false;
-  importResultEl.innerHTML = `
+function buildImportResultHTML(result) {
+  return `
     ${result.typeLabel ? `<span>Type: ${escapeHTML(result.typeLabel)}</span>` : ""}
     <strong>Imported: ${result.imported}</strong>
     <span>Skipped duplicates: ${result.skippedDuplicates}</span>
@@ -935,6 +1221,147 @@ function showImportResult(result) {
         : ""
     }
   `;
+}
+
+function showImportResult(result, options = {}) {
+  const target = options.inline ? inlineImportResultEl : importResultEl;
+  if (!target) return;
+
+  target.hidden = false;
+  target.innerHTML = buildImportResultHTML(result);
+
+  if (options.inline && importResultEl) {
+    importResultEl.hidden = true;
+  }
+}
+
+function showButtonCopied(button) {
+  if (!button) return;
+
+  const originalText = button.dataset.originalText || button.textContent;
+  button.dataset.originalText = originalText;
+  button.textContent = "Copied!";
+  button.classList.add("copied");
+  button.disabled = true;
+
+  window.setTimeout(() => {
+    button.textContent = originalText;
+    button.classList.remove("copied");
+    button.disabled = false;
+  }, 1400);
+}
+
+async function copyPromptToClipboard(text, button) {
+  try {
+    await navigator.clipboard.writeText(text);
+    showButtonCopied(button);
+  } catch (error) {
+    showImportResult({
+      typeLabel: "Prompt copy failed",
+      imported: 0,
+      skippedDuplicates: 0,
+      errors: ["Could not copy prompt. Try using a supported browser."]
+    });
+  }
+}
+
+function getPromptSourceName() {
+  return promptSourceInput.value.trim() || "SOURCE_NAME";
+}
+
+function getPromptInputText() {
+  return promptWordsInput.value.trim();
+}
+
+function buildWordsPrompt() {
+  const sourceName = getPromptSourceName();
+  const wordsText = getPromptInputText() || "PASTE_WORDS_HERE";
+
+  return WORDS_JSON_PROMPT
+    .replaceAll("SOURCE_NAME", sourceName)
+    .replace("PASTE_WORDS_HERE", wordsText);
+}
+
+function buildExercisePrompt() {
+  const sourceName = getPromptSourceName();
+  const wordsText = getPromptInputText() || "PASTE_WORDS_OR_WORD_OBJECTS_HERE";
+
+  return EXERCISE_PACK_PROMPT
+    .replaceAll("SOURCE_NAME", sourceName)
+    .replace("PASTE_WORDS_OR_WORD_OBJECTS_HERE", wordsText);
+}
+
+function updateSelectedJsonFileUI() {
+  const file = genericJsonInput.files[0];
+
+  if (!file) {
+    genericJsonFileLabel.classList.remove("has-file");
+    genericJsonFileButtonText.textContent = "Choose JSON file";
+    selectedJsonFileName.hidden = true;
+    selectedJsonFileName.textContent = "";
+    return;
+  }
+
+  genericJsonFileLabel.classList.add("has-file");
+  genericJsonFileButtonText.textContent = "JSON file selected";
+  selectedJsonFileName.hidden = false;
+  selectedJsonFileName.textContent = file.name;
+}
+
+async function getExerciseCoverage() {
+  const words = await getAll("words");
+  const exercises = await getAll("exercises");
+  const wordIdsWithExercises = new Set(exercises.map(exercise => exercise.wordId).filter(Boolean));
+  const missingWords = words.filter(word => !wordIdsWithExercises.has(word.id));
+
+  return {
+    totalWords: words.length,
+    wordsWithExercises: words.length - missingWords.length,
+    wordsWithoutExercises: missingWords.length,
+    missingWords
+  };
+}
+
+async function renderExerciseCoverage() {
+  const coverage = await getExerciseCoverage();
+
+  if (!coverage.totalWords) {
+    exerciseCoverageText.textContent = "No words imported yet.";
+    return;
+  }
+
+  exerciseCoverageText.textContent =
+    `${coverage.wordsWithExercises} of ${coverage.totalWords} words have exercises. ` +
+    `${coverage.wordsWithoutExercises} words still need exercises.`;
+}
+
+async function copyMissingExercisesPrompt() {
+  const coverage = await getExerciseCoverage();
+
+  if (!coverage.missingWords.length) {
+    showImportResult({
+      typeLabel: "Missing exercises prompt",
+      imported: 0,
+      skippedDuplicates: 0,
+      errors: ["All words already have exercises."]
+    });
+    return;
+  }
+
+  const batchSize = Number(missingExerciseBatchSizeSelect.value) || 10;
+  const batchWords = coverage.missingWords.slice(0, batchSize).map(word => ({
+    word: word.word,
+    meaning: word.meaning,
+    example: word.example,
+    tags: word.tags,
+    source: word.source
+  }));
+  const sourceName = promptSourceInput.value.trim() || "Missing Exercises";
+  const prompt = EXERCISE_PACK_PROMPT
+    .replaceAll("SOURCE_NAME", sourceName)
+    .replace("PASTE_WORDS_OR_WORD_OBJECTS_HERE", JSON.stringify(batchWords, null, 2));
+
+  await copyPromptToClipboard(prompt, copyMissingExercisesPromptBtn);
 }
 
 function normalizeJSONText(text) {
@@ -964,6 +1391,39 @@ function normalizeJSONText(text) {
   return cleanedText;
 }
 
+function repairCommonJSONIssues(text) {
+  return String(text)
+    .replace(/,\s*}/g, "}")
+    .replace(/,\s*]/g, "]");
+}
+
+function getJSONErrorContext(text, error) {
+  const message = error.message || "";
+  const positionMatch = message.match(/position (\d+)/);
+  const position = positionMatch ? Number(positionMatch[1]) : null;
+
+  if (position === null) {
+    return message;
+  }
+
+  const before = text.slice(0, position);
+  const line = before.split("\n").length;
+  const column = before.length - before.lastIndexOf("\n");
+  const lines = text.split("\n");
+  const start = Math.max(0, line - 3);
+  const end = Math.min(lines.length, line + 2);
+  const nearby = lines
+    .slice(start, end)
+    .map((lineText, index) => {
+      const lineNumber = start + index + 1;
+      const marker = lineNumber === line ? ">" : " ";
+      return `${marker} ${lineNumber}: ${lineText}`;
+    })
+    .join("\n");
+
+  return `${message}\n\nNear line ${line}, column ${column}:\n${nearby}`;
+}
+
 function readJSONFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -971,7 +1431,8 @@ function readJSONFile(file) {
     reader.onload = () => {
       try {
         const normalizedText = normalizeJSONText(reader.result);
-        resolve(JSON.parse(normalizedText));
+        const repairedText = repairCommonJSONIssues(normalizedText);
+        resolve(JSON.parse(repairedText));
       } catch (error) {
         reject(new Error("Invalid JSON file."));
       }
@@ -984,7 +1445,8 @@ function readJSONFile(file) {
 
 function parseJSONText(text) {
   const normalizedText = normalizeJSONText(text);
-  return JSON.parse(normalizedText);
+  const repairedText = repairCommonJSONIssues(normalizedText);
+  return JSON.parse(repairedText);
 }
 
 function detectPastedJSONType(data) {
@@ -1023,103 +1485,96 @@ function detectPastedJSONType(data) {
   return null;
 }
 
-async function importPastedJSON() {
-  const text = pasteJsonInput.value.trim();
+async function importJSONData(data, typeLabelPrefix = "Imported") {
+  const type = detectPastedJSONType(data);
+  let result;
 
-  if (!text) {
+  if (type === "backup") {
+    result = await importBackupFromJSON(data);
+  } else if (type === "exercisePack") {
+    result = await importExercisePackFromJSON(data);
+  } else if (type === "words") {
+    result = await importWordsFromJSON(data);
+  } else {
     showImportResult({
       imported: 0,
       skippedDuplicates: 0,
-      errors: ["Paste JSON first."]
-    });
+      errors: ["Could not detect JSON type."]
+    }, { inline: true });
+    return false;
+  }
+
+  const labels = {
+    backup: `${typeLabelPrefix} backup JSON`,
+    exercisePack: `${typeLabelPrefix} exercise pack JSON`,
+    words: `${typeLabelPrefix} words JSON`
+  };
+
+  result.typeLabel = labels[type];
+  showImportResult(result, { inline: true });
+  await refreshHomeStats();
+  await renderHomeWeakWordsSummary();
+  await renderWordsList();
+  await renderPracticePacks();
+  await renderWeakWords();
+  await renderExerciseCoverage();
+
+  return true;
+}
+
+async function importGenericJSON() {
+  const text = pasteJsonInput.value.trim();
+  const file = genericJsonInput.files[0];
+
+  if (text) {
+    try {
+      const data = parseJSONText(text);
+      const imported = await importJSONData(data, "Pasted");
+
+      if (imported) {
+        pasteJsonInput.value = "";
+        genericJsonInput.value = "";
+        updateSelectedJsonFileUI();
+      }
+    } catch (error) {
+      const normalizedText = normalizeJSONText(text);
+      const repairedText = repairCommonJSONIssues(normalizedText);
+      const context = getJSONErrorContext(repairedText, error);
+
+      showImportResult({
+        imported: 0,
+        skippedDuplicates: 0,
+        errors: [`Invalid pasted JSON:\n${context}`]
+      }, { inline: true });
+    }
     return;
   }
 
-  try {
-    const data = parseJSONText(text);
-    const type = detectPastedJSONType(data);
-    let result;
+  if (file) {
+    try {
+      const data = await readJSONFile(file);
+      const imported = await importJSONData(data, "File");
 
-    if (type === "backup") {
-      result = await importBackupFromJSON(data);
-    } else if (type === "exercisePack") {
-      result = await importExercisePackFromJSON(data);
-    } else if (type === "words") {
-      result = await importWordsFromJSON(data);
-    } else {
-      result = {
+      if (imported) {
+        pasteJsonInput.value = "";
+        genericJsonInput.value = "";
+        updateSelectedJsonFileUI();
+      }
+    } catch (error) {
+      showImportResult({
         imported: 0,
         skippedDuplicates: 0,
-        errors: ["Could not detect JSON type."]
-      };
+        errors: [error.message]
+      }, { inline: true });
     }
-
-    const labels = {
-      backup: "Pasted backup JSON",
-      exercisePack: "Pasted exercise pack JSON",
-      words: "Pasted words JSON"
-    };
-
-    result.typeLabel = labels[type] || "Pasted JSON";
-
-    showImportResult(result);
-    await refreshHomeStats();
-    await renderWordsList();
-    await renderPracticePacks();
-    pasteJsonInput.value = "";
-  } catch (error) {
-    showImportResult({
-      imported: 0,
-      skippedDuplicates: 0,
-      errors: [`Invalid pasted JSON: ${error.message}`]
-    });
+    return;
   }
-}
 
-async function handleWordsJSONImport(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  try {
-    const data = await readJSONFile(file);
-    const result = await importWordsFromJSON(data);
-    result.typeLabel = "Words JSON";
-
-    showImportResult(result);
-    await refreshHomeStats();
-    await renderWordsList();
-  } catch (error) {
-    showImportResult({
-      imported: 0,
-      skippedDuplicates: 0,
-      errors: [error.message]
-    });
-  } finally {
-    event.target.value = "";
-  }
-}
-
-async function handleExercisePackJSONImport(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  try {
-    const data = await readJSONFile(file);
-    const result = await importExercisePackFromJSON(data);
-    result.typeLabel = "Exercise pack JSON";
-
-    showImportResult(result);
-    await refreshHomeStats();
-    await renderPracticePacks();
-  } catch (error) {
-    showImportResult({
-      imported: 0,
-      skippedDuplicates: 0,
-      errors: [error.message]
-    });
-  } finally {
-    event.target.value = "";
-  }
+  showImportResult({
+    imported: 0,
+    skippedDuplicates: 0,
+    errors: ["Paste JSON or choose a JSON file first."]
+  }, { inline: true });
 }
 
 async function exportBackup() {
@@ -1146,6 +1601,185 @@ async function exportBackup() {
   link.click();
 
   URL.revokeObjectURL(url);
+}
+
+async function getWeakWords() {
+  const words = await getAll("words");
+  const attempts = await getAll("practiceAttempts");
+  const attemptsByWordId = new Map();
+
+  for (const attempt of attempts) {
+    if (!attempt.wordId) continue;
+
+    if (!attemptsByWordId.has(attempt.wordId)) {
+      attemptsByWordId.set(attempt.wordId, []);
+    }
+
+    attemptsByWordId.get(attempt.wordId).push(attempt);
+  }
+
+  const weakWords = words
+    .map(word => {
+      const wordAttempts = (attemptsByWordId.get(word.id) || [])
+        .slice()
+        .sort((a, b) => b.createdAt - a.createdAt);
+      const recentAttempts = wordAttempts.slice(0, 5);
+      const recentThreeAttempts = wordAttempts.slice(0, 3);
+      const totalAttempts = wordAttempts.length;
+      const totalCorrectAttempts = wordAttempts.filter(attempt => attempt.isCorrect).length;
+      const totalWrongAttempts = totalAttempts - totalCorrectAttempts;
+      const recentCorrectAttempts = recentAttempts.filter(attempt => attempt.isCorrect).length;
+      const recentWrongAttempts = recentAttempts.length - recentCorrectAttempts;
+      const recentAccuracy = recentAttempts.length
+        ? Math.round((recentCorrectAttempts / recentAttempts.length) * 100)
+        : 0;
+      const latestAttempt = recentAttempts[0] || null;
+      const lastThreeAllCorrect =
+        recentThreeAttempts.length === 3 && recentThreeAttempts.every(attempt => attempt.isCorrect);
+      const isWeak =
+        !lastThreeAllCorrect &&
+        (
+          (latestAttempt && !latestAttempt.isCorrect) ||
+          recentWrongAttempts >= 2 ||
+          (recentAttempts.length >= 3 && recentAccuracy < 70)
+        );
+
+      return {
+        id: word.id,
+        word: word.word,
+        meaning: word.meaning,
+        example: word.example,
+        tags: word.tags,
+        source: word.source,
+        totalAttempts,
+        wrongAttempts: recentWrongAttempts,
+        correctAttempts: recentCorrectAttempts,
+        accuracy: recentAccuracy,
+        lifetimeWrongAttempts: totalWrongAttempts,
+        lifetimeAccuracy: totalAttempts ? Math.round((totalCorrectAttempts / totalAttempts) * 100) : 0,
+        isWeak
+      };
+    })
+    .filter(word => word.isWeak)
+    .sort((a, b) => b.wrongAttempts - a.wrongAttempts || a.accuracy - b.accuracy);
+
+  return weakWords;
+}
+
+async function renderWeakWords() {
+  const weakWords = await getWeakWords();
+  const visibleWeakWords = isWeakWordsListVisible ? weakWords : weakWords.slice(0, 3);
+  weakWordsExportSummary.textContent = weakWords.length
+    ? `${weakWords.length} weak words need fresh practice.`
+    : "No weak words ready for export yet.";
+
+  if (!visibleWeakWords.length) {
+    weakWordsPracticeSummary.textContent = "No weak words yet.";
+    toggleWeakWordsBtn.hidden = true;
+    weakWordsList.hidden = false;
+    weakWordsList.innerHTML = `<p class="weak-words-empty">No weak words yet.</p>`;
+    return;
+  }
+
+  weakWordsPracticeSummary.textContent = `${weakWords.length} weak words need attention.`;
+  toggleWeakWordsBtn.hidden = false;
+  toggleWeakWordsBtn.textContent = isWeakWordsListVisible ? "Hide" : "Show";
+  weakWordsList.hidden = !isWeakWordsListVisible;
+  weakWordsList.innerHTML = `
+    ${visibleWeakWords
+      .map(word => `
+        <div class="weak-word-item">
+          <strong>${escapeHTML(word.word)}</strong>
+          <span>${word.wrongAttempts} mistakes &middot; ${word.accuracy}% accuracy</span>
+        </div>
+      `)
+      .join("")}
+  `;
+}
+
+async function exportWeakWordsPrompt() {
+  const batchSize = Number(weakWordsBatchSizeSelect.value) || 10;
+  const weakWords = (await getWeakWords())
+    .slice(0, batchSize)
+    .map(word => ({
+      word: word.word,
+      meaning: word.meaning,
+      example: word.example,
+      tags: word.tags,
+      source: word.source,
+      totalAttempts: word.totalAttempts,
+      wrongAttempts: word.wrongAttempts,
+      accuracy: word.accuracy
+    }));
+
+  if (!weakWords.length) {
+    showImportResult({
+      typeLabel: "Weak words export",
+      imported: 0,
+      skippedDuplicates: 0,
+      errors: ["No weak words found yet."]
+    });
+    return;
+  }
+
+  const prompt = `Generate a new English SRS exercisePack JSON for the weak words below.
+
+Everything must be in English.
+Return ONLY valid JSON.
+No markdown.
+No comments.
+No explanations.
+Generate 3 exercises per weak word.
+Use only these exercise types:
+- choose_sentence
+- fill_blank
+- choose_meaning
+- choose_word
+Do not reuse old example sentences.
+Do not reuse old answer options.
+Use fresh contexts.
+The answer must exactly match one of the options.
+Keep the word exactly as provided.
+If quotes are needed inside a sentence, use single quotes.
+
+Return JSON in this shape:
+{
+  "type": "exercisePack",
+  "pack": {
+    "name": "Weak Words Practice",
+    "description": "Fresh practice exercises for weak words",
+    "source": "GPT weak words prompt"
+  },
+  "exercises": [
+    {
+      "word": "example",
+      "type": "choose_sentence",
+      "question": "Choose the sentence that uses the word correctly.",
+      "options": ["...", "...", "...", "..."],
+      "answer": "..."
+    },
+    {
+      "word": "example",
+      "type": "fill_blank",
+      "question": "Fill in the blank: ...",
+      "options": ["...", "...", "...", "..."],
+      "answer": "..."
+    },
+    {
+      "word": "example",
+      "type": "choose_meaning",
+      "question": "Choose the meaning of 'example'.",
+      "options": ["...", "...", "...", "..."],
+      "answer": "..."
+    }
+  ]
+}
+
+Weak words:
+${JSON.stringify(weakWords, null, 2)}
+`;
+
+  await copyPromptToClipboard(prompt, exportWeakWordsPromptBtn);
 }
 
 function validateBackupData(data) {
@@ -1225,30 +1859,6 @@ async function importBackupFromJSON(data) {
   return result;
 }
 
-async function handleBackupJSONImport(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  try {
-    const data = await readJSONFile(file);
-    const result = await importBackupFromJSON(data);
-    result.typeLabel = "Backup JSON";
-
-    showImportResult(result);
-    await refreshHomeStats();
-    await renderWordsList();
-    await renderPracticePacks();
-  } catch (error) {
-    showImportResult({
-      imported: 0,
-      skippedDuplicates: 0,
-      errors: [error.message]
-    });
-  } finally {
-    event.target.value = "";
-  }
-}
-
 async function clearAllData() {
   const firstConfirm = confirm("Clear all local data? This will delete all words, packs, exercises, and practice history.");
   if (!firstConfirm) return;
@@ -1270,12 +1880,17 @@ async function clearAllData() {
   isPracticeAnswered = false;
 
   pasteJsonInput.value = "";
+  genericJsonInput.value = "";
+  updateSelectedJsonFileUI();
   wordSearchInput.value = "";
   resetWordForm();
 
   await refreshHomeStats();
+  await renderHomeWeakWordsSummary();
   await renderWordsList();
   await renderPracticePacks();
+  await renderWeakWords();
+  await renderExerciseCoverage();
 
   showImportResult({
     typeLabel: "Clear all data",
@@ -1297,10 +1912,15 @@ function escapeHTML(value) {
 }
 
 async function initApp() {
+  appVersionTextEl.textContent = `English SRS v${APP_VERSION}\nCache: ${CACHE_VERSION_LABEL}`;
+
   await openDB();
   await refreshHomeStats();
+  await renderHomeWeakWordsSummary();
   await renderWordsList();
   await renderPracticePacks();
+  await renderWeakWords();
+  await renderExerciseCoverage();
 
   addWordBtn.addEventListener("click", openNewWordForm);
   wordForm.addEventListener("submit", handleWordFormSubmit);
@@ -1318,6 +1938,8 @@ async function initApp() {
   });
 
   practicePackList.addEventListener("click", event => {
+    if (event.target.closest(".pack-select")) return;
+
     const card = event.target.closest(".practice-pack-card");
     if (!card) return;
 
@@ -1338,12 +1960,22 @@ async function initApp() {
     handlePracticeAnswer(button.dataset.option);
   });
 
+  startSmartPracticeBtn.addEventListener("click", startSmartPractice);
+  startWeakPracticeBtn.addEventListener("click", startWeakPractice);
+  toggleWeakWordsBtn.addEventListener("click", () => {
+    isWeakWordsListVisible = !isWeakWordsListVisible;
+    renderWeakWords();
+  });
   nextPracticeBtn.addEventListener("click", showNextPracticeExercise);
   backToPacksBtn.addEventListener("click", () => {
     showScreen("practiceScreen");
   });
 
   startReviewBtn.addEventListener("click", startReview);
+  homeSmartPracticeBtn.addEventListener("click", startSmartPractice);
+  homeOpenPracticeBtn.addEventListener("click", () => {
+    showScreen("practiceScreen");
+  });
   backHomeFromReviewBtn.addEventListener("click", () => {
     showScreen("homeScreen");
   });
@@ -1354,12 +1986,27 @@ async function initApp() {
 
     handleRating(button.dataset.rating);
   });
-  wordsJsonInput.addEventListener("change", handleWordsJSONImport);
-  exercisePackJsonInput.addEventListener("change", handleExercisePackJSONImport);
-  backupJsonInput.addEventListener("change", handleBackupJSONImport);
-  pasteJsonImportBtn.addEventListener("click", importPastedJSON);
+  copyWordsPromptBtn.addEventListener("click", () => {
+    copyPromptToClipboard(buildWordsPrompt(), copyWordsPromptBtn);
+  });
+  copyExercisePromptBtn.addEventListener("click", () => {
+    copyPromptToClipboard(buildExercisePrompt(), copyExercisePromptBtn);
+  });
+  copyMissingExercisesPromptBtn.addEventListener("click", copyMissingExercisesPrompt);
+  genericJsonInput.addEventListener("change", updateSelectedJsonFileUI);
+  importJsonBtn.addEventListener("click", importGenericJSON);
+  topHelpBtn.addEventListener("click", () => {
+    showScreen("helpScreen");
+  });
+  letsGetStartedBtn.addEventListener("click", () => {
+    showScreen("helpScreen");
+  });
+  backFromHelpBtn.addEventListener("click", () => {
+    showScreen("importScreen");
+  });
   clearAllDataBtn.addEventListener("click", clearAllData);
   exportBackupBtn.addEventListener("click", exportBackup);
+  exportWeakWordsPromptBtn.addEventListener("click", exportWeakWordsPrompt);
 
   // temporary test helper in console:
   // addDemoWord()
