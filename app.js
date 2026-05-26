@@ -185,6 +185,8 @@ let currentPracticeExercise = null;
 let practiceTotal = 0;
 let isPracticeAnswered = false;
 let isWeakWordsListVisible = false;
+let cachedExerciseCoverage = null;
+let cachedWeakWords = [];
 async function renderPracticePacks() {
   const packs = await getAll("exercisePacks");
   const attempts = await getAll("practiceAttempts");
@@ -1359,6 +1361,7 @@ async function getExerciseCoverage() {
 
 async function renderExerciseCoverage() {
   const coverage = await getExerciseCoverage();
+  cachedExerciseCoverage = coverage;
 
   if (!coverage.totalWords) {
     exerciseCoverageText.textContent = "No words imported yet.";
@@ -1370,8 +1373,18 @@ async function renderExerciseCoverage() {
     `${coverage.wordsWithoutExercises} words still need exercises.`;
 }
 
-async function copyMissingExercisesPrompt() {
-  const coverage = await getExerciseCoverage();
+function copyMissingExercisesPrompt() {
+  const coverage = cachedExerciseCoverage;
+
+  if (!coverage) {
+    showImportResult({
+      typeLabel: "Missing exercises prompt",
+      imported: 0,
+      skippedDuplicates: 0,
+      errors: ["Exercise coverage is still loading. Try again in a moment."]
+    }, { inline: true });
+    return;
+  }
 
   if (!coverage.missingWords.length) {
     showImportResult({
@@ -1379,7 +1392,7 @@ async function copyMissingExercisesPrompt() {
       imported: 0,
       skippedDuplicates: 0,
       errors: ["All words already have exercises."]
-    });
+    }, { inline: true });
     return;
   }
 
@@ -1396,7 +1409,7 @@ async function copyMissingExercisesPrompt() {
     .replaceAll("SOURCE_NAME", sourceName)
     .replace("PASTE_WORDS_OR_WORD_OBJECTS_HERE", JSON.stringify(batchWords, null, 2));
 
-  await copyPromptToClipboard(prompt, copyMissingExercisesPromptBtn);
+  copyPromptToClipboard(prompt, copyMissingExercisesPromptBtn);
 }
 
 function normalizeJSONText(text) {
@@ -1703,6 +1716,7 @@ async function getWeakWords() {
 
 async function renderWeakWords() {
   const weakWords = await getWeakWords();
+  cachedWeakWords = weakWords;
   const visibleWeakWords = isWeakWordsListVisible ? weakWords : weakWords.slice(0, 3);
   weakWordsExportSummary.textContent = weakWords.length
     ? `${weakWords.length} weak words need fresh practice.`
@@ -1725,16 +1739,16 @@ async function renderWeakWords() {
       .map(word => `
         <div class="weak-word-item">
           <strong>${escapeHTML(word.word)}</strong>
-          <span>${word.wrongAttempts} mistakes &middot; ${word.accuracy}% accuracy</span>
+          <span>${word.wrongAttempts} wrong &middot; ${word.accuracy}%</span>
         </div>
       `)
       .join("")}
   `;
 }
 
-async function exportWeakWordsPrompt() {
+function exportWeakWordsPrompt() {
   const batchSize = Number(weakWordsBatchSizeSelect.value) || 10;
-  const weakWords = (await getWeakWords())
+  const weakWords = cachedWeakWords
     .slice(0, batchSize)
     .map(word => ({
       word: word.word,
@@ -1749,11 +1763,11 @@ async function exportWeakWordsPrompt() {
 
   if (!weakWords.length) {
     showImportResult({
-      typeLabel: "Weak words export",
+      typeLabel: "Weak words prompt",
       imported: 0,
       skippedDuplicates: 0,
       errors: ["No weak words found yet."]
-    });
+    }, { inline: true });
     return;
   }
 
@@ -1814,7 +1828,7 @@ Weak words:
 ${JSON.stringify(weakWords, null, 2)}
 `;
 
-  await copyPromptToClipboard(prompt, exportWeakWordsPromptBtn);
+  copyPromptToClipboard(prompt, exportWeakWordsPromptBtn);
 }
 
 function validateBackupData(data) {
