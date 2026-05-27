@@ -110,6 +110,42 @@ h2 {
   letter-spacing: -0.035em;
 }
 
+.section-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+.section-description {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.section-block {
+  margin-top: 22px;
+}
+
+.section-block:first-child {
+  margin-top: 0;
+}
+
+.control-helper {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.settings-action-btn {
+  margin: 10px 0 8px;
+}
+
 .screen {
   display: none;
 }
@@ -176,6 +212,68 @@ h2 {
   text-align: center;
 }
 
+.progress-card h2 {
+  margin-bottom: 14px;
+}
+
+.progress-goal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-weight: 900;
+}
+
+.progress-goal-row span:last-child {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.progress-bar {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--soft);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.progress-bar-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+.progress-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.progress-stats-grid div {
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.progress-stats-grid strong {
+  display: block;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.progress-stats-grid span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .muted {
   color: var(--muted);
   font-size: 15px;
@@ -198,33 +296,6 @@ h2 {
 .secondary-btn {
   background: var(--soft);
   color: var(--text);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin: 14px 0;
-}
-
-.stat-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 18px;
-}
-
-.stat-card span {
-  display: block;
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-}
-
-.stat-card p {
-  margin: 4px 0 0;
-  color: var(--muted);
-  font-size: 14px;
 }
 
 .empty-state {
@@ -512,6 +583,27 @@ input[type="search"] {
 .practice-list {
   display: grid;
   gap: 12px;
+}
+
+.practice-card {
+  margin-bottom: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
+}
+
+.practice-card h2 {
+  margin-bottom: 8px;
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
+.practice-card p {
+  margin-bottom: 14px;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .smart-practice-card {
@@ -862,10 +954,6 @@ input[type="search"] {
   }
 }
 
-.backup-import-btn {
-  margin-top: 10px;
-}
-
 .import-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -984,6 +1072,11 @@ input[type="search"] {
 
 #importJsonBtn {
   margin-top: 0;
+}
+
+#pasteImportJsonBtn,
+#pasteImportWordAuditBtn {
+  margin-bottom: 12px;
 }
 
 .import-card .paste-json-input + .generic-json-file {
@@ -1156,6 +1249,12 @@ input[type="search"] {
   padding-left: 22px;
   color: var(--muted);
   line-height: 1.5;
+}
+
+.help-stack h3 {
+  margin: 16px 0 8px;
+  font-size: 20px;
+  letter-spacing: -0.02em;
 }
 
 .help-stack li {
@@ -1389,4 +1488,678 @@ input[type="search"] {
 #importScreen .danger-card #appVersionText {
   display: block;
   margin-top: 14px;
+}
+
+.exercise-audit-result {
+  margin-top: 14px;
+}
+
+.audit-summary {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.audit-section {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.audit-section:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.audit-section-header h3,
+.audit-section-header .section-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+}
+
+.audit-section-header p,
+.audit-summary,
+#exactAuditSummaryText,
+#similarAuditSummaryText {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.word-audit-summary {
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.audit-section-header-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.audit-inline-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.audit-inline-actions .secondary-btn {
+  width: auto;
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: 14px;
+  font-size: 14px;
+}
+
+.audit-exact-cleanup {
+  margin-top: 10px;
+}
+
+.show-more-audit-btn {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.audit-bottom-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.audit-item {
+  padding: 14px;
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+}
+
+.audit-item-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.audit-item-header input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.audit-item-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.audit-item-title strong {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.audit-item-title span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.audit-compare-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.audit-field {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.audit-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.audit-field p {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.audit-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.audit-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.audit-pill-danger {
+  background: #fff0f0;
+  color: #a83232;
+}
+
+.audit-highlight {
+  background: #fff3b0;
+  color: var(--text);
+  border-radius: 5px;
+  padding: 0 3px;
+}
+
+.word-audit-summary {
+  margin-top: 14px;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.word-audit-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.word-audit-result {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.word-audit-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--bg);
+}
+
+.word-audit-item-header {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.word-audit-item-header input {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  flex: 0 0 auto;
+}
+
+.word-audit-group-item {
+  grid-template-columns: 1fr;
+}
+
+.word-audit-item h3 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.word-audit-item p {
+  margin: 0 0 8px;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.word-audit-item blockquote {
+  margin: 0 0 10px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.word-audit-issues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.word-audit-issues span {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.word-audit-issues span.info {
+  opacity: 0.75;
+}
+
+.word-audit-related {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.word-audit-related strong {
+  margin-right: 2px;
+}
+
+.word-audit-related-btn {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 5px 9px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.word-audit-related-btn:active {
+  transform: translateY(1px);
+}
+
+.word-audit-group-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.word-audit-group-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  padding: 12px;
+}
+
+.word-audit-group-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.word-audit-group-card-title strong {
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.word-audit-group-card p {
+  margin: 0 0 8px;
+}
+
+.word-audit-group-card blockquote {
+  margin: 0;
+  color: var(--muted);
+}
+
+@media (min-width: 720px) {
+  .audit-compare-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .audit-section-header-row {
+    display: block;
+  }
+
+  .audit-inline-actions {
+    margin-top: 10px;
+  }
+
+  .audit-item-title {
+    display: block;
+  }
+
+  .audit-item-title span {
+    display: block;
+    margin-top: 4px;
+  }
+
+  .audit-bottom-actions {
+    gap: 10px;
+  }
+
+  .word-audit-item {
+    grid-template-columns: 1fr;
+  }
+
+  .word-audit-item .small-btn {
+    width: 100%;
+  }
+}
+
+.word-audit-pill.warning {
+  background: #fff0f0 !important;
+  color: #a83232 !important;
+  border: 1px solid #f4b6b6;
+}
+
+.word-audit-pill.info {
+  background: var(--soft) !important;
+  color: var(--muted) !important;
+  border: 1px solid var(--border);
+  opacity: 0.72;
+}
+
+/* Consistent spacing for stacked buttons and cards */
+.import-card > .secondary-btn + .secondary-btn,
+.import-card > .secondary-btn + .danger-btn,
+.import-card > .danger-btn + .secondary-btn,
+.import-card > .danger-btn + .danger-btn {
+  margin-top: 12px;
+}
+
+.import-card > .word-audit-result:not(:empty) + .secondary-btn,
+.import-card > .exercise-audit-result:not(:empty) + .secondary-btn,
+.import-card > .exercise-audit-result:not(:empty) + .danger-btn {
+  margin-top: 14px;
+}
+
+.stack > .import-card + .import-card,
+.stack > .practice-card + .practice-card {
+  margin-top: 18px;
+}
+
+.word-audit-result,
+.exercise-audit-result {
+  margin-bottom: 14px;
+}
+
+.audit-bottom-actions,
+.audit-exact-cleanup {
+  margin-top: 14px;
+}
+
+@media (max-width: 520px) {
+  .word-audit-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .import-card > .secondary-btn + .secondary-btn,
+  .import-card > .secondary-btn + .danger-btn,
+  .import-card > .danger-btn + .secondary-btn,
+  .import-card > .danger-btn + .danger-btn {
+    margin-top: 14px;
+  }
+
+  .stack > .import-card + .import-card,
+  .stack > .practice-card + .practice-card {
+    margin-top: 20px;
+  }
+}
+
+/* Normalize Home card spacing */
+#homeScreen .home-grid {
+  display: grid;
+  gap: 18px;
+  margin: 0 !important;
+}
+
+#homeScreen .home-card,
+#homeScreen .progress-card {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+#homeScreen .home-stats-line {
+  margin-top: 12px !important;
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 520px) {
+  #homeScreen .home-grid {
+    gap: 18px;
+    margin: 0 !important;
+  }
+
+  #homeScreen .home-stats-line {
+    margin-top: 12px !important;
+    margin-bottom: 0 !important;
+  }
+}
+
+.screen:not(.active) .home-card,
+.screen:not(.active) .progress-card,
+.screen:not(.active) .home-stats-line {
+  display: none !important;
+}
+
+.exercise-type-picker {
+  margin-top: 18px;
+}
+
+.exercise-type-picker > .section-title {
+  margin-bottom: 8px;
+}
+
+.exercise-type-picker .control-helper {
+  margin: 8px 0;
+}
+
+.exercise-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.exercise-type-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  font-weight: 800;
+}
+
+.exercise-type-option input {
+  width: 18px;
+  height: 18px;
+}
+
+.generator-section {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.generator-section:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+#practiceScreen .practice-card .focused-filter-block .section-title {
+  margin: 0 0 10px;
+  font-size: 20px;
+  letter-spacing: -0.025em;
+}
+
+/* Focused Practice hierarchy */
+#practiceScreen .practice-card .focused-filter-block {
+  margin-top: 24px;
+}
+
+#practiceScreen .practice-card .focused-filter-block:first-of-type {
+  margin-top: 20px;
+}
+
+#practiceScreen .practice-card > h2 {
+  margin-bottom: 8px;
+}
+
+#practiceScreen .practice-card > p:first-of-type {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+#practiceScreen .practice-card .focused-filter-block .section-title,
+#practiceScreen .practice-card .focused-tag-filter-header h3 {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+#practiceScreen .practice-card .focused-tag-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+#practiceScreen .practice-card .focused-tag-filter .muted,
+#practiceScreen .practice-card .focused-practice-start-row + .muted {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+#practiceScreen .practice-card .focused-type-chip-grid,
+#practiceScreen .practice-card .focused-tag-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+#practiceScreen .practice-card .focused-type-chip,
+#practiceScreen .practice-card .focused-tag-chip {
+  min-height: 38px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+#practiceScreen .practice-card .focused-type-chip.active,
+#practiceScreen .practice-card .focused-tag-chip.active {
+  background: var(--text);
+  color: var(--card);
+  border-color: var(--text);
+}
+
+#practiceScreen .practice-card .focused-type-chip:not(.active),
+#practiceScreen .practice-card .focused-tag-chip:not(.active) {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+#practiceScreen .practice-card .focused-tag-chip small {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+#practiceScreen .practice-card .focused-source-label,
+#practiceScreen .practice-card .focused-practice-size-label {
+  margin: 0;
+}
+
+#practiceScreen .practice-card .focused-source-label select,
+#practiceScreen .practice-card .focused-practice-size-label select {
+  min-height: 56px;
+  font-size: 17px;
+  font-weight: 850;
+}
+
+#practiceScreen .practice-card .focused-practice-preview-line {
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+#practiceScreen .practice-card .focused-practice-start-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 12px;
+  align-items: end;
+  margin-top: 12px;
+}
+
+#practiceScreen .practice-card .focused-practice-start-row .primary-btn {
+  min-height: 56px;
+  height: 56px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+@media (max-width: 520px) {
+  #practiceScreen .practice-card .focused-filter-block {
+    margin-top: 22px;
+  }
+
+  #practiceScreen .practice-card > p:first-of-type {
+    font-size: 18px;
+  }
+
+  #practiceScreen .practice-card .focused-filter-block .section-title,
+  #practiceScreen .practice-card .focused-tag-filter-header h3 {
+    font-size: 20px;
+  }
+
+  #practiceScreen .practice-card .focused-tag-filter .muted,
+  #practiceScreen .practice-card .focused-practice-start-row + .muted {
+    font-size: 14px;
+  }
+
+  #practiceScreen .practice-card .focused-type-chip,
+  #practiceScreen .practice-card .focused-tag-chip {
+    min-height: 36px;
+    padding: 7px 11px;
+    font-size: 14px;
+  }
+
+  #practiceScreen .practice-card .focused-practice-start-row {
+    grid-template-columns: 1fr;
+  }
+
+  #practiceScreen .practice-card .focused-practice-start-row .primary-btn {
+    height: 56px;
+  }
 }

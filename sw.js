@@ -1,4 +1,4 @@
-const CACHE_NAME = "english-srs-v5";
+const CACHE_NAME = "english-srs-v6";
 
 const FILES_TO_CACHE = [
   "./",
@@ -41,5 +41,3 @@ self.addEventListener("fetch", event => {
     })
   );
 });
-// deployment bump
-// deployment bump2

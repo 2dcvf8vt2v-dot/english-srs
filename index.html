@@ -35,7 +35,7 @@
         <div class="hero-card install-tip-card" id="installTipCard" hidden>
           <p class="muted">Install app</p>
           <h2>Add English SRS to your Home Screen</h2>
-          <p>On iPhone: tap Share, choose Add to Home Screen, then open the app from your Home Screen.</p>
+          <p>Install English SRS from your browser menu for the best offline experience. iPhone: Safari → Share → Add to Home Screen. Android: Chrome → menu → Add to Home screen / Install app.</p>
           <button class="secondary-btn" id="dismissInstallTipBtn" type="button">Got it</button>
         </div>
 
@@ -56,6 +56,35 @@
             <h2>Weak words</h2>
             <p id="homeWeakWordsSummary">No weak words yet.</p>
             <button class="secondary-btn" id="homeOpenPracticeBtn" type="button">Open practice</button>
+          </div>
+          <div class="home-card progress-card" id="homeProgressCard">
+            <h2>Progress</h2>
+            <div class="progress-goal-row">
+              <span id="dailyProgressText">0 / 20 today</span>
+              <span id="streakText">0-day streak</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-bar-fill" id="dailyProgressFill"></div>
+            </div>
+            <div class="progress-stats-grid">
+              <div>
+                <strong id="reviewsTodayText">0</strong>
+                <span>reviews today</span>
+              </div>
+              <div>
+                <strong id="practiceTodayText">0</strong>
+                <span>practice today</span>
+              </div>
+              <div>
+                <strong id="todayAccuracyText">–</strong>
+                <span>today accuracy</span>
+              </div>
+              <div>
+                <strong id="matureWordsText">0</strong>
+                <span>mature words</span>
+              </div>
+            </div>
+            <p class="muted" id="weekStatsText">No 7-day practice data yet.</p>
           </div>
         </div>
 
@@ -124,6 +153,56 @@
             <button class="secondary-btn compact-start-btn" id="startWeakPracticeBtn" type="button">Go</button>
           </div>
           <div id="weakWordsList" class="weak-words-list"></div>
+        </div>
+
+        <div class="practice-card">
+          <h2>Focused Practice</h2>
+          <p class="section-description">Choose exercise types manually and start a custom session from selected packs.</p>
+
+          <div class="focused-filter-block">
+            <h3 class="section-title">Type</h3>
+            <div class="focused-type-chip-grid" id="focusedPracticeTypeGrid"></div>
+          </div>
+
+          <div class="focused-filter-block">
+            <div class="focused-tag-filter">
+              <div class="focused-tag-filter-header">
+                <h3 class="section-title">Tags</h3>
+                <button class="small-btn" id="toggleFocusedTagsBtn" type="button">Show tags</button>
+              </div>
+              <div class="focused-tag-chip-grid" id="focusedPracticeTagGrid" hidden></div>
+              <p class="muted control-helper">Shows common tags only. Tap tags to include any matching word.</p>
+            </div>
+          </div>
+
+          <div class="focused-filter-block">
+            <h3 class="section-title">Source</h3>
+            <label class="prompt-builder-label focused-source-label">
+              <select id="focusedPracticeSourceSelect">
+                <option value="all">All sources</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="focused-practice-preview-line" id="focusedPracticePreview">
+            Matches: 0
+          </div>
+
+          <div class="focused-practice-start-row">
+            <label class="prompt-builder-label focused-practice-size-label">
+              Session size
+              <select id="focusedPracticeLimitSelect">
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="30">30</option>
+                <option value="50">50</option>
+              </select>
+            </label>
+
+            <button class="primary-btn" id="startFocusedPracticeBtn" type="button">Go</button>
+          </div>
+
+          <p class="muted control-helper">Uses selected packs. Dictionary adds app-generated meaning/word questions.</p>
         </div>
 
         <div class="practice-list" id="practicePackList"></div>
@@ -200,8 +279,8 @@
       <section class="screen" id="importScreen">
         <div class="stack">
           <div class="import-card">
-            <h2>Generate with GPT</h2>
-            <p>Copy a prompt, paste it into GPT, then import the JSON result here.</p>
+            <h2>Words generator</h2>
+            <p>Generate word cards from a list of words, phrases, or book context.</p>
             <label class="prompt-builder-label">
               Source name
               <input id="promptSourceInput" type="text" placeholder="Role Model, The Long Game, Article name..." />
@@ -210,13 +289,29 @@
               Word list or word objects
               <textarea id="promptWordsInput" class="prompt-builder-input" rows="8" placeholder="Paste words here, one per line, or paste exported word objects for exercises..."></textarea>
             </label>
-            <div class="prompt-actions">
-              <button class="secondary-btn" id="copyWordsPromptBtn" type="button">Copy words prompt</button>
+            <button class="secondary-btn" id="copyWordsPromptBtn" type="button">Copy words prompt</button>
+          </div>
+
+          <div class="import-card">
+            <h2>Exercises generator</h2>
+            <p class="section-description">Generate practice exercises for imported words.</p>
+            <div class="exercise-type-picker" id="exerciseTypePicker">
+              <h3 class="section-title">Exercise types</h3>
+              <p class="muted control-helper">Choose which exercise types GPT should generate.</p>
+              <div class="exercise-type-grid" id="exerciseTypeGrid"></div>
+              <p class="muted control-helper">Dictionary questions are generated by the app automatically.</p>
+            </div>
+
+            <div class="generator-section">
+              <h3 class="section-title">Exercise pack</h3>
+              <p class="section-description">Generate a new practice pack from the words pasted in Words generator using the selected exercise types.</p>
               <button class="secondary-btn" id="copyExercisePromptBtn" type="button">Copy exercise pack prompt</button>
             </div>
-            <div class="prompt-mini-card">
-              <h3>Missing exercises</h3>
-              <p id="exerciseCoverageText">Checking exercise coverage...</p>
+
+            <div class="prompt-mini-card generator-section">
+              <h3 class="section-title">Missing exercises</h3>
+              <p id="exerciseCoverageText">Generate GPT context exercises for words that have no imported exercises yet.</p>
+              <p class="muted control-helper">Uses selected exercise types above.</p>
               <div class="prompt-mini-actions">
                 <label class="prompt-builder-label prompt-mini-label">
                   Batch size
@@ -228,9 +323,11 @@
                 <button class="secondary-btn" id="copyMissingExercisesPromptBtn" type="button">Copy prompt</button>
               </div>
             </div>
-            <div class="prompt-mini-card">
-              <h3>Weak words</h3>
-              <p id="weakWordsExportSummary">Checking weak words...</p>
+
+            <div class="prompt-mini-card generator-section">
+              <h3 class="section-title">Weak words</h3>
+              <p id="weakWordsExportSummary">Generate fresh GPT context exercises for words you recently missed in Practice.</p>
+              <p class="muted control-helper">Uses selected exercise types above.</p>
               <div class="prompt-mini-actions">
                 <label class="prompt-builder-label prompt-mini-label">
                   Batch size
@@ -246,104 +343,282 @@
 
           <div class="import-card">
             <h2>Import data</h2>
-            <p>Paste JSON or choose a JSON file. The app will detect words, exercise packs, or backups.</p>
+            <p>Paste JSON or choose a JSON file. The app detects words, exercise packs, and backups automatically.</p>
             <textarea id="pasteJsonInput" class="paste-json-input" rows="8" placeholder="Paste JSON here..."></textarea>
             <label class="file-btn generic-json-file" id="genericJsonFileLabel">
               <span id="genericJsonFileButtonText">Choose JSON file</span>
               <input id="genericJsonInput" type="file" accept="application/json,.json" />
             </label>
             <p class="selected-file-name" id="selectedJsonFileName" hidden></p>
+            <button class="secondary-btn" id="pasteImportJsonBtn" type="button">Paste & import from clipboard</button>
             <button class="secondary-btn" id="importJsonBtn" type="button">Import JSON</button>
             <div class="inline-import-result" id="inlineImportResult" hidden></div>
+          </div>
+          <div class="import-result" id="importResult" hidden></div>
+        </div>
+      </section>
+
+      <section class="screen" id="moreScreen">
+        <div class="stack">
+          <div class="import-card">
+            <h2>Settings</h2>
+            <p>Control how new words enter Review.</p>
+            <label class="prompt-builder-label">
+              New words per day
+              <select id="newWordsPerDaySelect">
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="30">30</option>
+                <option value="50">50</option>
+              <option value="100">100</option>
+              </select>
+            </label>
+            <p class="muted">New word imports use this limit. If you already imported a large dictionary, use Reschedule new words below.</p>
+            <button class="secondary-btn settings-action-btn" id="rescheduleNewWordsBtn" type="button">Reschedule new words</button>
+            <p class="muted">This only affects words that have never been reviewed. Existing progress stays untouched.</p>
+            <label class="prompt-builder-label">
+              Daily goal
+              <select id="dailyGoalSelect">
+                <option value="10">10 actions</option>
+                <option value="20" selected>20 actions</option>
+                <option value="30">30 actions</option>
+                <option value="50">50 actions</option>
+                <option value="100">100 actions</option>
+              </select>
+            </label>
+            <p class="muted">One Review rating or one Practice answer counts as one action.</p>
+          </div>
+
+          <div class="import-card">
+            <h2>Quality tools</h2>
+            <p>Find weak spots in exercises and word cards before they become annoying in practice.</p>
+            <button class="secondary-btn" id="openExerciseAuditBtn" type="button">Open exercise audit</button>
+            <button class="secondary-btn" id="openWordAuditBtn" type="button">Open word audit</button>
           </div>
 
           <div class="import-card">
             <h2>Backup</h2>
             <p>Export all local data with a JSON backup file.</p>
-            <button class="secondary-btn" id="exportBackupBtn">Export backup</button>
+            <button class="secondary-btn" id="exportBackupBtn" type="button">Export backup</button>
+          </div>
+
+          <div class="import-card">
+            <h2>Guide</h2>
+            <p>Read setup steps, practice modes, import help, and backup notes.</p>
+            <button class="secondary-btn" type="button" data-screen="helpScreen">Open guide</button>
+          </div>
+
+          <div class="import-card">
+            <h2>App</h2>
+            <p>Refresh the installed app after updates or if it still shows an old version.</p>
+            <button class="secondary-btn" id="refreshAppBtn" type="button">Refresh app</button>
+            <div class="app-version" id="appVersionText"></div>
           </div>
 
           <div class="import-card danger-card maintenance-card">
-            <h2>Maintenance</h2>
-            <p>Clear all local words, exercise packs, exercises, and practice history.</p>
-            <button class="secondary-btn" id="refreshAppBtn" type="button">Refresh app</button>
+            <h2>Danger zone</h2>
+            <p>Clear all local words, exercise packs, exercises, and practice history. Make a backup first.</p>
             <button class="danger-btn" id="clearAllDataBtn" type="button">Clear all data</button>
-            <div class="app-version" id="appVersionText"></div>
           </div>
-          <div class="import-result" id="importResult" hidden></div>
         </div>
       </section>
 
       <section class="screen" id="helpScreen">
         <div class="help-stack">
           <div class="import-card">
-            <h2>First setup</h2>
-            <p>English SRS works best in this order:</p>
+            <h2>Install on your phone</h2>
+            <p>English SRS works offline after the first load, but it feels best as an installed app.</p>
+
+            <h3>iPhone / iPad</h3>
             <ol>
-              <li>Generate words JSON with GPT.</li>
-              <li>Import the words JSON.</li>
-              <li>Generate exercise pack JSON.</li>
-              <li>Import the exercise pack JSON.</li>
-              <li>Learn with Review and Practice.</li>
-              <li>Export a backup sometimes.</li>
+              <li>Open the app in Safari.</li>
+              <li>Tap Share.</li>
+              <li>Choose Add to Home Screen.</li>
+              <li>Tap Add.</li>
+              <li>Open English SRS from the Home Screen.</li>
+            </ol>
+
+            <h3>Android</h3>
+            <ol>
+              <li>Open the app in Chrome.</li>
+              <li>Open the browser menu.</li>
+              <li>Choose Add to Home screen or Install app.</li>
+              <li>Tap Add or Install.</li>
+              <li>Open English SRS from the Home Screen.</li>
             </ol>
           </div>
 
           <div class="import-card">
-            <h2>Add words</h2>
-            <p>Paste a word list into Generate with GPT, add a source name, then copy the words prompt.</p>
-            <p>Send the prompt to GPT. GPT should return a words JSON.</p>
-            <p>Paste that JSON into Import data and press Import JSON.</p>
+            <h2>Basic flow</h2>
+            <p>The app works in two layers: word cards for Review and exercise packs for Practice.</p>
+            <ol>
+              <li>Add words with Words generator or manual entry.</li>
+              <li>Import the words JSON.</li>
+              <li>Create exercises with Exercises generator.</li>
+              <li>Import the exercise pack JSON.</li>
+              <li>Use Review to remember meanings over time.</li>
+              <li>Use Practice to test words in context.</li>
+              <li>Run audits when definitions or exercises start looking messy.</li>
+              <li>Export a backup before big changes.</li>
+            </ol>
+            <p>Review is based on due dates. Practice uses imported exercises plus dictionary questions generated from your word cards.</p>
           </div>
 
           <div class="import-card">
-            <h2>Add exercises</h2>
-            <p>After importing words, check Exercise coverage.</p>
-            <p>If some words still need exercises, choose a batch size and copy the missing exercises prompt.</p>
-            <p>Send it to GPT, then import the returned exercise pack JSON.</p>
+            <h2>Words generator</h2>
+            <p>Words are the base of everything. Each card needs a word, short meaning, example, tags, and source.</p>
+            <p>Paste words, phrases, or book context into Words generator, set a source name, then copy the prompt.</p>
+            <p>Send the prompt to GPT and import the returned words JSON through Import data.</p>
+            <p>Good cards use short English-only meanings and natural examples. Examples are for the card, not for future exercises.</p>
+            <p>New words per day controls how new imports are paced. If you already imported a large dictionary, use Reschedule new words in Settings.</p>
           </div>
 
           <div class="import-card">
-            <h2>Learn every day</h2>
-            <p>Review uses spaced repetition cards.</p>
-            <p>Smart Practice chooses useful exercises from selected packs.</p>
-            <p>Weak Practice focuses on words you recently missed.</p>
-            <p>Pack Practice starts one specific exercise pack.</p>
+            <h2>Exercises generator</h2>
+            <p>Exercises generator creates GPT prompts for practice packs. It uses the words you pasted in Words generator or words selected by Missing exercises / Weak words.</p>
+            <p>You can choose which GPT exercise types to generate: Sentence choice, Fill blank, Paraphrase, Best context, and Tone.</p>
+            <p>Dictionary questions are different. The app creates choose_meaning and choose_word questions automatically from your word cards, so GPT should not generate them.</p>
+            <p>Use Exercise pack when you want a normal new practice pack. Use Missing exercises when some words have no imported exercises yet. Use Weak words when you want fresh practice for words you recently missed.</p>
           </div>
 
           <div class="import-card">
-            <h2>Fix weak words</h2>
+            <h2>Practice modes</h2>
+            <p><strong>Review</strong> is spaced repetition. It shows words when they are due and updates their next due date after your rating.</p>
+            <p><strong>Smart Practice</strong> picks useful exercises from selected packs and mixes in generated dictionary questions. It is automatic and word-priority based.</p>
+            <p><strong>Weak Practice</strong> focuses on words you recently missed. A word leaves Weak words after recent correct answers.</p>
+            <p><strong>Focused Practice</strong> is the manual mode. Choose exercise types, tags, source, and session size yourself.</p>
+            <p><strong>Pack Practice</strong> starts one imported pack directly and uses the exercises from that pack.</p>
+          </div>
+
+          <div class="import-card">
+            <h2>Focused Practice filters</h2>
+            <p><strong>Type</strong> lets you choose one or more exercise groups. For example, you can train only Tone, only Best context, or several types together.</p>
+            <p><strong>Tags</strong> shows common tags only, so the list does not turn into a huge mess. Selected tags use OR logic: a word can match any selected tag.</p>
+            <p><strong>Source</strong> narrows practice to one book, batch, article, or other source.</p>
+            <p><strong>Matches</strong> previews how many imported exercises and dictionary words fit your current filters before you press Go.</p>
+          </div>
+
+          <div class="import-card">
+            <h2>Weak words</h2>
             <p>Weak words are based on recent Practice answers, not your whole history.</p>
-            <p>A word can become weak if you miss it recently or your recent accuracy is low.</p>
-            <p>If your last 3 answers for a word are correct, it leaves Weak words.</p>
-            <p>Use Copy weak words prompt to generate fresh exercises for weak words.</p>
+            <p>A word becomes weak when you miss it recently, miss it several times, or your recent accuracy for that word is low.</p>
+            <p>If the last 3 answers for a word are correct, it leaves Weak words.</p>
+            <p>Use Weak Practice for quick repair sessions. Use the Weak words prompt when you want GPT to generate fresh context exercises for those words.</p>
+          </div>
+
+          <div class="import-card">
+            <h2>Exercise audit</h2>
+            <p>Exercise audit finds exercises that reuse card examples or look too similar to them.</p>
+            <p><strong>Exact matches</strong> are usually safe to delete in bulk because they copy the card example too directly.</p>
+            <p><strong>Similar matches</strong> need manual review. Select only the suspicious ones, then delete selected.</p>
+            <p>Exercise audit deletes exercises only. It does not delete words, sources, packs, or Review progress.</p>
+          </div>
+
+          <div class="import-card">
+            <h2>Word audit and fixes</h2>
+            <p>Word audit checks card quality: missing examples, missing tags, long meanings, Russian text, duplicate meanings, and meanings that reuse the target word too closely.</p>
+            <p>Select the cards or duplicate groups you want to fix, then copy the GPT fix prompt.</p>
+            <p>GPT should return a wordFixes JSON. Import it with Paste & import fixes on the Word audit screen, or through Import data.</p>
+            <p>Word fixes keep the same card IDs. They can update meaning, example, tags, and source without resetting Review progress.</p>
+          </div>
+
+          <div class="import-card">
+            <h2>Import data</h2>
+            <p>Import data accepts words, exercise packs, word fixes, and full backups. The app detects the JSON type automatically.</p>
+            <p>You can paste JSON manually, choose a JSON file, or use Paste & import from clipboard when GPT's response is already copied.</p>
+            <p>If clipboard import fails, paste the JSON into the field and press Import JSON. Browser clipboard access can be picky, especially outside secure contexts.</p>
+            <p>If import fails, read the error. Most problems come from extra text outside JSON, broken quotes, missing commas, or words that do not exist yet.</p>
           </div>
 
           <div class="import-card">
             <h2>Backup and restore</h2>
             <p>Your data is stored locally on this device. It does not sync automatically.</p>
-            <p>Export backup saves your words, exercise packs, exercises, attempts, and progress.</p>
+            <p>Export backup saves words, exercise packs, exercises, practice attempts, review attempts, and activity history.</p>
             <p>To restore data, import the backup JSON through Import data.</p>
+            <p>Make a backup before Clear all data, bulk audit deletion, large imports, or risky testing.</p>
           </div>
 
           <div class="import-card">
             <h2>Offline and updates</h2>
             <p>The app works offline after it has loaded once from the hosted site.</p>
-            <p>When the app updates, open it with internet, wait a moment, close it, and open it again.</p>
-            <p>Your words and progress should stay on the device.</p>
+            <p>Use Refresh app after updates or when the installed app still shows an old cache version.</p>
+            <p>Your words and progress should stay on this device after refresh. Still, exporting a backup before bigger changes is the sane move.</p>
           </div>
 
-          <button class="secondary-btn" id="backFromHelpBtn" type="button">Back to Import</button>
+          <button class="secondary-btn" id="backFromHelpBtn" type="button">Back</button>
+        </div>
+      </section>
+
+      <section class="screen" id="exerciseAuditScreen">
+        <div class="import-card">
+          <h2>Exercise audit</h2>
+          <p>Find old exercises that reuse card examples or look too similar. Exact matches are usually safe to delete in bulk. Similar matches should be reviewed manually.</p>
+
+          <button class="secondary-btn" id="runExerciseAuditBtn" type="button">Run audit</button>
+
+          <div class="audit-section">
+            <div class="audit-section-header">
+              <h3 class="section-title">Exact matches</h3>
+              <p id="exactAuditSummaryText">No exact matches found.</p>
+            </div>
+            <div class="audit-exact-cleanup">
+              <button class="danger-btn" id="deleteExactExerciseMatchesBtn" type="button">Delete exact matches</button>
+            </div>
+          </div>
+
+          <div class="audit-section">
+            <div class="audit-section-header-row">
+              <div class="audit-section-header">
+                <h3 class="section-title">Similar matches</h3>
+                <p id="similarAuditSummaryText">No similar matches found.</p>
+              </div>
+              <div class="audit-inline-actions">
+                <button class="secondary-btn" id="selectShownAuditBtn" type="button">Select shown</button>
+                <button class="secondary-btn" id="clearAuditSelectionBtn" type="button">Clear selection</button>
+              </div>
+            </div>
+
+            <div class="exercise-audit-result" id="exerciseAuditResult"></div>
+
+            <button class="secondary-btn show-more-audit-btn" id="showMoreAuditBtn" type="button" hidden>Show more</button>
+          </div>
+
+          <div class="audit-bottom-actions">
+            <button class="danger-btn" id="deleteSelectedAuditBtn" type="button">Delete selected</button>
+            <button class="secondary-btn" id="backFromExerciseAuditBtn" type="button">Back</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="wordAuditScreen">
+        <div class="import-card">
+          <h2>Word audit</h2>
+          <p>Find word cards with weak definitions, missing examples, missing tags, or other quality issues.</p>
+
+          <button class="secondary-btn" id="runWordAuditBtn" type="button">Run word audit</button>
+          <button class="secondary-btn" id="pasteImportWordAuditBtn" type="button">Paste & import fixes</button>
+
+          <div class="word-audit-controls">
+            <button class="secondary-btn" id="selectWordAuditWarningsBtn" type="button">Select warnings</button>
+            <button class="secondary-btn" id="selectWordAuditNotesBtn" type="button">Select notes</button>
+            <button class="secondary-btn" id="clearWordAuditSelectionBtn" type="button">Clear selection</button>
+            <button class="secondary-btn" id="copyWordAuditFixPromptBtn" type="button">Copy GPT fix prompt</button>
+          </div>
+
+          <div class="word-audit-summary" id="wordAuditSummary">Run audit to check word card quality.</div>
+          <div class="word-audit-result" id="wordAuditResult"></div>
+
+          <button class="secondary-btn" id="backFromWordAuditBtn" type="button">Back</button>
         </div>
       </section>
     </main>
 
     <nav class="bottom-nav">
       <button class="nav-btn active" data-screen="homeScreen">Home</button>
-      <button class="nav-btn" data-screen="reviewScreen">Review</button>
       <button class="nav-btn" data-screen="practiceScreen">Practice</button>
       <button class="nav-btn" data-screen="wordsScreen">Words</button>
       <button class="nav-btn" data-screen="importScreen">Import</button>
+      <button class="nav-btn" data-screen="moreScreen">More</button>
     </nav>
   </div>
 
