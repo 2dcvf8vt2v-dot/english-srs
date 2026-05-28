@@ -1,7 +1,7 @@
 const DB_NAME = "english-srs-db";
 const DB_VERSION = 3;
-const APP_VERSION = "1.2.0";
-const CACHE_VERSION_LABEL = "english-srs-v6";
+const APP_VERSION = "1.3.0";
+const CACHE_VERSION_LABEL = "english-srs-v7";
 const DEFAULT_NEW_WORDS_PER_DAY = 20;
 const DEFAULT_DAILY_GOAL = 20;
 const FOCUSED_TAG_MIN_COUNT = 7;
@@ -185,10 +185,16 @@ const screenTitle = document.querySelector("#screenTitle");
 const dueCountEl = document.querySelector("#dueCount");
 const totalWordsEl = document.querySelector("#totalWords");
 const totalPacksEl = document.querySelector("#totalPacks");
+const startTodayTitle = document.querySelector("#startTodayTitle");
+const startTodayDescription = document.querySelector("#startTodayDescription");
+const startTodayBtn = document.querySelector("#startTodayBtn");
 const startReviewBtn = document.querySelector("#startReviewBtn");
 const homeSmartPracticeBtn = document.querySelector("#homeSmartPracticeBtn");
 const homeOpenPracticeBtn = document.querySelector("#homeOpenPracticeBtn");
+const homeWeakPracticeBtn = document.querySelector("#homeWeakPracticeBtn");
+const homeFocusedPracticeBtn = document.querySelector("#homeFocusedPracticeBtn");
 const homeWeakWordsSummary = document.querySelector("#homeWeakWordsSummary");
+const homeWeakShortcutText = document.querySelector("#homeWeakShortcutText");
 const homeStatsLine = document.querySelector("#homeStatsLine");
 const reviewCard = document.querySelector("#reviewCard");
 const reviewProgressEl = document.querySelector("#reviewProgress");
@@ -197,7 +203,9 @@ const reviewHintEl = document.querySelector("#reviewHint");
 const reviewAnswerEl = document.querySelector("#reviewAnswer");
 const reviewMeaningEl = document.querySelector("#reviewMeaning");
 const reviewExampleEl = document.querySelector("#reviewExample");
+const reviewMetaChips = document.querySelector("#reviewMetaChips");
 const reviewActionsEl = document.querySelector("#reviewActions");
+const reviewCompleteActions = document.querySelector("#reviewCompleteActions");
 const backHomeFromReviewBtn = document.querySelector("#backHomeFromReviewBtn");
 const copyWordsPromptBtn = document.querySelector("#copyWordsPromptBtn");
 const copyExercisePromptBtn = document.querySelector("#copyExercisePromptBtn");
@@ -272,6 +280,9 @@ const focusedPracticeTagGrid = document.querySelector("#focusedPracticeTagGrid")
 const toggleFocusedTagsBtn = document.querySelector("#toggleFocusedTagsBtn");
 const focusedPracticeLimitSelect = document.querySelector("#focusedPracticeLimitSelect");
 const focusedPracticePreview = document.querySelector("#focusedPracticePreview");
+const focusedPracticeSummary = document.querySelector("#focusedPracticeSummary");
+const focusedPracticeConfigureBtn = document.querySelector("#focusedPracticeConfigureBtn");
+const focusedPracticeControls = document.querySelector("#focusedPracticeControls");
 const startFocusedPracticeBtn = document.querySelector("#startFocusedPracticeBtn");
 const startSmartPracticeBtn = document.querySelector("#startSmartPracticeBtn");
 const smartPracticeLimitSelect = document.querySelector("#smartPracticeLimitSelect");
@@ -283,6 +294,7 @@ const weakWordsList = document.querySelector("#weakWordsList");
 const dailyProgressText = document.querySelector("#dailyProgressText");
 const streakText = document.querySelector("#streakText");
 const dailyProgressFill = document.querySelector("#dailyProgressFill");
+const todayGoalStatus = document.querySelector("#todayGoalStatus");
 const reviewsTodayText = document.querySelector("#reviewsTodayText");
 const practiceTodayText = document.querySelector("#practiceTodayText");
 const todayAccuracyText = document.querySelector("#todayAccuracyText");
@@ -298,7 +310,16 @@ let practiceQueue = [];
 let currentPracticeExercise = null;
 let practiceTotal = 0;
 let isPracticeAnswered = false;
+let startTodayAction = "done";
+let currentPracticeSession = {
+  source: null,
+  sourceId: null,
+  exercises: [],
+  attempts: [],
+  missedExercises: []
+};
 let isWeakWordsListVisible = false;
+let isFocusedPracticeExpanded = false;
 let cachedExerciseCoverage = null;
 let cachedExerciseHistoryByWordId = new Map();
 let cachedWeakWords = [];
@@ -312,6 +333,7 @@ let hasRunExerciseAudit = false;
 let latestWordAudit = [];
 let hasRunWordAudit = false;
 let selectedWordAuditIds = new Set();
+let lastKnownHomeDayStart = startOfLocalDay();
 
 function buildExerciseHistoryByWordId(exercises) {
   const history = new Map();
@@ -369,6 +391,39 @@ function buildPromptWordObject(word) {
     existingOptions: history.existingOptions
   };
 }
+
+function renderMetaChips(items, className = "pack-meta compact-pack-meta") {
+  const chips = items
+    .filter(item => item !== null && item !== undefined && item !== "")
+    .map(item => `<span>${escapeHTML(item)}</span>`)
+    .join("");
+
+  return `<div class="${escapeHTML(className)}">${chips}</div>`;
+}
+
+function renderChip(label, className = "") {
+  return `<span${className ? ` class="${escapeHTML(className)}"` : ""}>${escapeHTML(label)}</span>`;
+}
+
+function renderChipRow(items, rowClassName, chipClassName = "") {
+  const chips = items
+    .filter(item => item !== null && item !== undefined && item !== "")
+    .map(item => renderChip(item, chipClassName))
+    .join("");
+
+  return chips ? `<div class="${escapeHTML(rowClassName)}">${chips}</div>` : "";
+}
+
+function buildPracticePackMetaItems({ exerciseCount, source, attemptsCount, mistakes, accuracy }) {
+  return [
+    `${exerciseCount} exercises`,
+    source || null,
+    `${attemptsCount} attempts`,
+    `${mistakes} mistakes`,
+    accuracy === null ? null : `${accuracy}% accuracy`
+  ];
+}
+
 async function renderPracticePacks() {
   const packs = await getAll("exercisePacks");
   const exercises = await getAll("exercises");
@@ -399,27 +454,33 @@ async function renderPracticePacks() {
         pack.description !== "English-only multiple choice practice based on imported vocabulary.";
 
       const card = document.createElement("article");
-      card.className = "practice-pack-card";
+      card.className = "practice-pack-card compact-pack-card";
       card.dataset.packId = pack.id;
 
       card.innerHTML = `
-        <label class="pack-select">
+        <label class="pack-select compact-pack-select" title="Use this pack in Smart and Focused Practice">
           <input type="checkbox" data-pack-select="true" value="${escapeHTML(pack.id)}" checked />
         </label>
-        <div>
+
+        <div class="compact-pack-main">
           <h3>${escapeHTML(pack.name)}</h3>
-          ${shouldShowDescription ? `<p>${escapeHTML(pack.description)}</p>` : ""}
-          <div class="pack-meta">
-            <span>${exerciseCountByPackId.get(pack.id) || 0} exercises</span>
-            ${pack.source ? `<span>${escapeHTML(pack.source)}</span>` : ""}
-            <span>${packAttempts.length} attempts</span>
-            <span>${mistakes} mistakes</span>
-            ${accuracy === null ? "" : `<span>${accuracy}% accuracy</span>`}
-          </div>
+          ${
+            shouldShowDescription || pack.source
+              ? `<p class="compact-pack-description">${escapeHTML(shouldShowDescription ? pack.description : pack.source)}</p>`
+              : ""
+          }
+          ${renderMetaChips(buildPracticePackMetaItems({
+            exerciseCount: exerciseCountByPackId.get(pack.id) || 0,
+            source: pack.source,
+            attemptsCount: packAttempts.length,
+            mistakes,
+            accuracy
+          }))}
         </div>
-        <div class="pack-actions">
+
+        <div class="pack-actions compact-pack-actions">
           <button class="small-btn" type="button" data-pack-action="start">Start</button>
-          <button class="pack-delete-btn" type="button" data-pack-action="delete">Delete</button>
+          <button class="pack-delete-btn compact-delete-btn" type="button" data-pack-action="delete">Delete</button>
         </div>
       `;
 
@@ -446,11 +507,8 @@ async function deleteExercisePack(packId) {
   }
 
   await deleteItem("exercisePacks", packId);
-  await refreshHomeStats();
-  await renderHomeWeakWordsSummary();
-  await renderPracticePacks();
-  await renderWeakWords();
-  await renderExerciseCoverage();
+  await refreshHomeDashboard();
+  await refreshPracticeDataUI();
 }
 
 async function getExercisesByPackId(packId) {
@@ -460,6 +518,51 @@ async function getExercisesByPackId(packId) {
 
 function shuffleArray(items) {
   return [...items].sort(() => Math.random() - 0.5);
+}
+
+function startPracticeSession(exercises, source = "practice", sourceId = null) {
+  practiceQueue = shuffleArray(exercises);
+  practiceTotal = practiceQueue.length;
+  currentPracticeExercise = null;
+  isPracticeAnswered = false;
+
+  currentPracticeSession = {
+    source,
+    sourceId,
+    exercises: [...practiceQueue],
+    attempts: [],
+    missedExercises: []
+  };
+
+  showScreen("practiceSessionScreen");
+  showNextPracticeExercise();
+}
+
+function getUniqueMissedExercises(exercises) {
+  const seen = new Set();
+  const unique = [];
+
+  for (const exercise of exercises || []) {
+    const key = exercise.id || `${exercise.wordId || exercise.word}::${exercise.question}`;
+
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    unique.push(exercise);
+  }
+
+  return unique;
+}
+
+function startMistakeRepairSession() {
+  const missedExercises = getUniqueMissedExercises(currentPracticeSession.missedExercises);
+
+  if (!missedExercises.length) {
+    alert("No missed exercises to repair.");
+    return;
+  }
+
+  startPracticeSession(missedExercises, "repair", currentPracticeSession.sourceId || null);
 }
 
 function getSharedTagsScore(wordA, wordB) {
@@ -593,22 +696,23 @@ function buildGeneratedDictionaryExercises(words, limit = 20) {
 async function startPracticePack(packId) {
   const exercises = await getExercisesByPackId(packId);
 
-  practiceQueue = shuffleArray(exercises);
-  practiceTotal = practiceQueue.length;
-  currentPracticeExercise = null;
-  isPracticeAnswered = false;
+  startPracticeSession(exercises, "pack", packId);
+}
 
-  showScreen("practiceSessionScreen");
-  showNextPracticeExercise();
+function getSelectedPracticePackIds() {
+  if (!practicePackList) return new Set();
+
+  return new Set(
+    [...practicePackList.querySelectorAll('[data-pack-select="true"]:checked')]
+      .map(input => input.value)
+      .filter(Boolean)
+  );
 }
 
 async function startSmartPractice() {
   const exercises = await getAll("exercises");
   const limit = Number(smartPracticeLimitSelect.value) || 20;
-  const selectedPackIds = new Set(
-    [...practicePackList.querySelectorAll('[data-pack-select="true"]:checked')]
-      .map(input => input.value)
-  );
+  const selectedPackIds = getSelectedPracticePackIds();
 
   if (!selectedPackIds.size) {
     showScreen("practiceScreen");
@@ -704,13 +808,7 @@ async function startSmartPractice() {
     .slice(0, limit)
     .map(item => item.exercise);
 
-  practiceQueue = shuffleArray(selected);
-  practiceTotal = practiceQueue.length;
-  currentPracticeExercise = null;
-  isPracticeAnswered = false;
-
-  showScreen("practiceSessionScreen");
-  showNextPracticeExercise();
+  startPracticeSession(selected, "smart");
 }
 
 async function startFocusedPractice() {
@@ -735,13 +833,7 @@ async function startFocusedPractice() {
     return;
   }
 
-  practiceQueue = selected;
-  practiceTotal = practiceQueue.length;
-  currentPracticeExercise = null;
-  isPracticeAnswered = false;
-
-  showScreen("practiceSessionScreen");
-  showNextPracticeExercise();
+  startPracticeSession(selected, "focused");
 }
 
 async function startWeakPractice() {
@@ -790,13 +882,97 @@ async function startWeakPractice() {
     .slice(0, limit)
     .map(item => item.exercise);
 
-  practiceQueue = shuffleArray(selected);
-  practiceTotal = practiceQueue.length;
-  currentPracticeExercise = null;
-  isPracticeAnswered = false;
+  startPracticeSession(selected, "weak");
+}
 
-  showScreen("practiceSessionScreen");
-  showNextPracticeExercise();
+function buildPracticeCompleteStatsHTML({ correct, total, accuracy, missedCount }) {
+  return `
+    <div class="practice-complete-stats">
+      <div>
+        <strong>${correct} / ${total}</strong>
+        <span>correct</span>
+      </div>
+      <div>
+        <strong>${accuracy}%</strong>
+        <span>accuracy</span>
+      </div>
+      <div>
+        <strong>${missedCount}</strong>
+        <span>missed</span>
+      </div>
+    </div>
+  `;
+}
+
+function buildPracticeCompleteMissedHTML({ missed, missedWords, isRepairSession }) {
+  if (missed.length) {
+    return `
+      <div class="practice-complete-missed">
+        <h3>${isRepairSession ? "Still missed" : "Missed words"}</h3>
+        <p>${escapeHTML(missedWords || `${missed.length} missed exercise${missed.length === 1 ? "" : "s"}`)}</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="practice-complete-missed">
+      <h3>No misses</h3>
+      <p>Clean session. Nice.</p>
+    </div>
+  `;
+}
+
+function buildPracticeCompleteActionsHTML({ hasMisses }) {
+  return `
+    <div class="practice-complete-actions">
+      <button class="secondary-btn" type="button" data-practice-complete-action="again">Practice again</button>
+      ${
+        hasMisses
+          ? `<button class="secondary-btn" type="button" data-practice-complete-action="repair">Repair mistakes</button>`
+          : ""
+      }
+      <button class="primary-btn" type="button" data-practice-complete-action="home">Home</button>
+    </div>
+  `;
+}
+
+function showPracticeSessionComplete() {
+  const total = currentPracticeSession.attempts.length;
+  const correct = currentPracticeSession.attempts.filter(attempt => attempt.isCorrect).length;
+  const missed = currentPracticeSession.missedExercises;
+  const accuracy = total ? Math.round((correct / total) * 100) : 0;
+  const isRepairSession = currentPracticeSession.source === "repair";
+  const missedWords = [...new Set(missed.map(exercise => exercise.word).filter(Boolean))]
+    .slice(0, 6)
+    .join(", ");
+
+  practiceProgressEl.textContent = "Complete";
+  practiceQuestionEl.textContent = isRepairSession
+    ? "Repair complete"
+    : "Session complete";
+
+  practiceOptionsEl.innerHTML = `
+    <div class="practice-complete-card">
+      ${buildPracticeCompleteStatsHTML({
+        correct,
+        total,
+        accuracy,
+        missedCount: missed.length
+      })}
+      ${buildPracticeCompleteMissedHTML({
+        missed,
+        missedWords,
+        isRepairSession
+      })}
+      ${buildPracticeCompleteActionsHTML({
+        hasMisses: missed.length > 0
+      })}
+    </div>
+  `;
+
+  practiceFeedbackEl.hidden = true;
+  practiceFeedbackEl.textContent = "";
+  nextPracticeBtn.hidden = true;
 }
 
 function showNextPracticeExercise() {
@@ -808,8 +984,7 @@ function showNextPracticeExercise() {
   nextPracticeBtn.hidden = true;
 
   if (!currentPracticeExercise) {
-    practiceProgressEl.textContent = "Done";
-    practiceQuestionEl.textContent = "Practice session complete";
+    showPracticeSessionComplete();
     return;
   }
 
@@ -836,6 +1011,16 @@ async function handlePracticeAnswer(selectedOption) {
   isPracticeAnswered = true;
 
   const isCorrect = selectedOption === currentPracticeExercise.answer;
+  currentPracticeSession.attempts.push({
+    exercise: currentPracticeExercise,
+    selectedAnswer: selectedOption,
+    isCorrect
+  });
+
+  if (!isCorrect) {
+    currentPracticeSession.missedExercises.push(currentPracticeExercise);
+  }
+
   const optionButtons = practiceOptionsEl.querySelectorAll(".practice-option-btn");
 
   optionButtons.forEach(button => {
@@ -1219,6 +1404,8 @@ function renderFocusedPracticeTypePicker() {
       ${escapeHTML(item.label)}
     </button>
   `).join("");
+
+  renderFocusedPracticeSummary();
 }
 
 async function renderFocusedPracticeSourceFilter() {
@@ -1237,6 +1424,8 @@ async function renderFocusedPracticeSourceFilter() {
   if (currentValue === "all" || sources.includes(currentValue)) {
     focusedPracticeSourceSelect.value = currentValue;
   }
+
+  renderFocusedPracticeSummary();
 }
 
 async function renderFocusedPracticeTagFilter() {
@@ -1264,6 +1453,7 @@ async function renderFocusedPracticeTagFilter() {
         No common tags yet. Tags will appear here when at least ${FOCUSED_TAG_MIN_COUNT} words use the same tag.
       </p>
     `;
+    renderFocusedPracticeSummary();
     return;
   }
 
@@ -1278,6 +1468,8 @@ async function renderFocusedPracticeTagFilter() {
       <small>${count}</small>
     </button>
   `).join("");
+
+  renderFocusedPracticeSummary();
 }
 
 function getSelectedFocusedPracticeGroups() {
@@ -1310,6 +1502,43 @@ function getSelectedFocusedTags() {
   );
 }
 
+function renderFocusedPracticeExpandedState() {
+  if (!focusedPracticeControls || !focusedPracticeConfigureBtn) return;
+
+  focusedPracticeControls.hidden = !isFocusedPracticeExpanded;
+  focusedPracticeConfigureBtn.textContent = isFocusedPracticeExpanded
+    ? "Hide filters"
+    : "Configure";
+}
+
+function renderFocusedPracticeSummary() {
+  if (!focusedPracticeSummary) return;
+
+  const selectedGroups = getSelectedFocusedPracticeGroups();
+  const selectedSource = getSelectedFocusedSource();
+  const selectedTags = getSelectedFocusedTags();
+  const limit = Number(focusedPracticeLimitSelect?.value) || 20;
+
+  const groupText = selectedGroups.size === PRACTICE_TYPE_GROUPS.length
+    ? "All types"
+    : `${selectedGroups.size} type${selectedGroups.size === 1 ? "" : "s"}`;
+
+  const sourceText = selectedSource === "all"
+    ? "All sources"
+    : selectedSource;
+
+  const tagText = selectedTags.size
+    ? `${selectedTags.size} tag${selectedTags.size === 1 ? "" : "s"}`
+    : null;
+
+  focusedPracticeSummary.textContent = [
+    groupText,
+    tagText,
+    sourceText,
+    `${limit} questions`
+  ].filter(Boolean).join(" · ");
+}
+
 function wordMatchesFocusedFilters(word, selectedSource, selectedTags) {
   if (!word) return false;
 
@@ -1330,10 +1559,7 @@ async function getFocusedPracticeMatches() {
   const selectedGroups = getSelectedFocusedPracticeGroups();
   const selectedSource = getSelectedFocusedSource();
   const selectedTags = getSelectedFocusedTags();
-  const selectedPackIds = new Set(
-    [...practicePackList.querySelectorAll('[data-pack-select="true"]:checked')]
-      .map(input => input.value)
-  );
+  const selectedPackIds = getSelectedPracticePackIds();
 
   const exercises = await getAll("exercises");
   const words = await getAll("words");
@@ -1362,6 +1588,8 @@ async function getFocusedPracticeMatches() {
 }
 
 async function renderFocusedPracticePreview() {
+  renderFocusedPracticeSummary();
+
   if (!focusedPracticePreview) return;
 
   try {
@@ -1383,6 +1611,8 @@ async function renderFocusedPracticePreview() {
   } catch (error) {
     console.log("Focused Practice preview failed:", error);
     focusedPracticePreview.textContent = "Could not preview Focused Practice matches.";
+  } finally {
+    renderFocusedPracticeSummary();
   }
 }
 
@@ -1527,6 +1757,72 @@ async function refreshHomeStats() {
   totalPacksEl.textContent = packs.length;
   homeStatsLine.textContent = `${words.length} words · ${packs.length} packs · ${weakWords.length} weak`;
   onboardingCard.hidden = !(words.length === 0 && packs.length === 0);
+  await renderStartTodayCard({ words, packs, weakWords });
+}
+
+async function renderStartTodayCard(data = {}) {
+  if (!startTodayTitle || !startTodayDescription || !startTodayBtn) return;
+
+  const words = data.words || await safeGetAll("words");
+  const packs = data.packs || await safeGetAll("exercisePacks");
+  const weakWords = data.weakWords || await getWeakWords();
+  const exercises = await safeGetAll("exercises");
+  const now = Date.now();
+  const dueWords = words.filter(word => word.dueDate <= now);
+  const hasSmartPractice = packs.length > 0 && exercises.length > 0;
+
+  startTodayBtn.disabled = false;
+
+  if (dueWords.length) {
+    startTodayAction = "review";
+    startTodayTitle.textContent = "Review due words";
+    startTodayDescription.textContent = `${dueWords.length} review card${dueWords.length === 1 ? "" : "s"} ready now`;
+    startTodayBtn.textContent = "Start review";
+    return;
+  }
+
+  if (weakWords.length) {
+    startTodayAction = "weak";
+    startTodayTitle.textContent = "Repair weak words";
+    startTodayDescription.textContent = `${weakWords.length} weak word${weakWords.length === 1 ? "" : "s"} need extra attention`;
+    startTodayBtn.textContent = "Start weak practice";
+    return;
+  }
+
+  if (hasSmartPractice) {
+    startTodayAction = "smart";
+    startTodayTitle.textContent = "Smart Practice";
+    startTodayDescription.textContent = "No reviews due. Keep momentum with Smart Practice";
+    startTodayBtn.textContent = "Start smart practice";
+    return;
+  }
+
+  startTodayAction = words.length ? "done" : "import";
+  startTodayTitle.textContent = words.length ? "All caught up" : "Add words";
+  startTodayDescription.textContent = words.length ? "No reviews due right now" : "Add words to start";
+  startTodayBtn.textContent = words.length ? "All caught up" : "Add words";
+  startTodayBtn.disabled = words.length > 0;
+}
+
+function handleStartToday() {
+  if (startTodayAction === "review") {
+    startReview();
+    return;
+  }
+
+  if (startTodayAction === "weak") {
+    startWeakPractice();
+    return;
+  }
+
+  if (startTodayAction === "smart") {
+    startSmartPractice();
+    return;
+  }
+
+  if (startTodayAction === "import") {
+    showScreen("importScreen");
+  }
 }
 
 function getStreakFromActivityDates(timestamps) {
@@ -1550,7 +1846,6 @@ async function renderHomeProgress() {
     !reviewsTodayText ||
     !practiceTodayText ||
     !todayAccuracyText ||
-    !matureWordsText ||
     !weekStatsText
   ) return;
 
@@ -1588,14 +1883,23 @@ async function renderHomeProgress() {
 
   const todayActions = reviewsToday + practiceTodayCount;
   const progressPercent = Math.min(100, Math.round((todayActions / dailyGoal) * 100));
+  const actionsLeft = Math.max(0, dailyGoal - todayActions);
 
   dailyProgressText.textContent = `${todayActions} / ${dailyGoal} today`;
   streakText.textContent = `${streak}-day streak`;
   dailyProgressFill.style.width = `${progressPercent}%`;
+  if (todayGoalStatus) {
+    todayGoalStatus.textContent = actionsLeft === 0
+      ? "Goal reached"
+      : `${actionsLeft} action${actionsLeft === 1 ? "" : "s"} left`;
+    todayGoalStatus.classList.toggle("goal-reached", actionsLeft === 0);
+  }
   reviewsTodayText.textContent = reviewsToday;
   practiceTodayText.textContent = practiceTodayCount;
   todayAccuracyText.textContent = todayAccuracy === null ? "–" : `${todayAccuracy}%`;
-  matureWordsText.textContent = matureWords;
+  if (matureWordsText) {
+    matureWordsText.textContent = matureWords;
+  }
   weekStatsText.textContent = weekAccuracy === null
     ? "No 7-day practice data yet."
     : `${weekPractice.length} practice answers in 7 days · ${weekAccuracy}% correct`;
@@ -1604,13 +1908,80 @@ async function renderHomeProgress() {
 async function renderHomeWeakWordsSummary() {
   const weakWords = await getWeakWords();
 
-  if (!weakWords.length) {
-    homeWeakWordsSummary.textContent = "No weak words yet.";
+  if (homeWeakWordsSummary) {
+    if (!weakWords.length) {
+      homeWeakWordsSummary.textContent = "No weak words yet.";
+    } else {
+      const previewWords = weakWords.slice(0, 3).map(word => word.word).join(", ");
+      homeWeakWordsSummary.textContent = `${weakWords.length} words need attention: ${previewWords}`;
+    }
+  }
+
+  if (homeWeakShortcutText) {
+    homeWeakShortcutText.textContent = weakWords.length
+      ? `${weakWords.length} weak ${weakWords.length === 1 ? "word" : "words"}`
+      : "No weak words";
+  }
+
+  if (homeWeakPracticeBtn) {
+    homeWeakPracticeBtn.disabled = weakWords.length === 0;
+  }
+}
+
+async function refreshHomeDashboard() {
+  await refreshHomeStats();
+  await renderHomeProgress();
+  await renderHomeWeakWordsSummary();
+}
+
+async function refreshPracticeDataUI() {
+  await renderPracticePacks();
+  await renderWeakWords();
+  await renderExerciseCoverage();
+}
+
+async function refreshFocusedPracticeUI() {
+  await renderFocusedPracticeSourceFilter();
+  await renderFocusedPracticeTagFilter();
+  await renderFocusedPracticePreview();
+  renderFocusedPracticeExpandedState();
+  renderFocusedPracticeSummary();
+}
+
+async function refreshWordDependentUI() {
+  await refreshHomeStats();
+  await renderHomeProgress();
+  await renderHomeWeakWordsSummary();
+  await renderWordsList();
+  await refreshPracticeDataUI();
+  await refreshFocusedPracticeUI();
+}
+
+async function refreshAfterImport() {
+  await refreshHomeDashboard();
+  await renderWordsList();
+  await refreshPracticeDataUI();
+  await refreshFocusedPracticeUI();
+}
+
+async function refreshAfterDelete() {
+  await refreshWordDependentUI();
+}
+
+async function refreshHomeDashboardIfDayChanged() {
+  const currentDayStart = startOfLocalDay();
+
+  if (currentDayStart === lastKnownHomeDayStart) {
     return;
   }
 
-  const previewWords = weakWords.slice(0, 3).map(word => word.word).join(", ");
-  homeWeakWordsSummary.textContent = `${weakWords.length} words need attention: ${previewWords}`;
+  lastKnownHomeDayStart = currentDayStart;
+  await refreshHomeDashboard();
+}
+
+async function refreshHomeDashboardOnReturn() {
+  lastKnownHomeDayStart = startOfLocalDay();
+  await refreshHomeDashboard();
 }
 
 async function renderWordsList() {
@@ -1654,11 +2025,7 @@ async function renderWordsList() {
       card.innerHTML = `
         <h3>${escapeHTML(item.word)}</h3>
         <p>${escapeHTML(item.meaning)}</p>
-        ${
-          item.tags?.length
-            ? `<div class="tag-row">${item.tags.map(tag => `<span>${escapeHTML(tag)}</span>`).join("")}</div>`
-            : ""
-        }
+        ${renderChipRow(item.tags || [], "tag-row")}
       `;
 
       list.appendChild(card);
@@ -1777,15 +2144,7 @@ async function handleDeleteWord() {
 
   await deleteItem("words", wordId);
   resetWordForm();
-  await refreshHomeStats();
-  await renderHomeWeakWordsSummary();
-  await renderWordsList();
-  await renderPracticePacks();
-  await renderWeakWords();
-  await renderExerciseCoverage();
-  await renderFocusedPracticeSourceFilter();
-  await renderFocusedPracticeTagFilter();
-  await renderFocusedPracticePreview();
+  await refreshAfterDelete();
   if (wordFormReturnScreen === "wordAuditScreen" && hasRunWordAudit) {
     await runWordAudit();
   }
@@ -1807,11 +2166,138 @@ async function startReview() {
   showNextReviewCard();
 }
 
+function renderReviewMetaChips(word, isVisible = false) {
+  if (!reviewMetaChips) return;
+
+  if (!word || !isVisible) {
+    reviewMetaChips.hidden = true;
+    reviewMetaChips.innerHTML = "";
+    return;
+  }
+
+  const tags = Array.isArray(word.tags) ? word.tags.filter(Boolean) : [];
+  const visibleTags = tags.slice(0, 4);
+  const chips = [];
+
+  for (const tag of visibleTags) {
+    chips.push({
+      label: tag,
+      type: "tag"
+    });
+  }
+
+  if (tags.length > visibleTags.length) {
+    chips.push({
+      label: `+${tags.length - visibleTags.length}`,
+      type: "more"
+    });
+  }
+
+  if (word.source) {
+    chips.push({
+      label: word.source,
+      type: "source"
+    });
+  }
+
+  if (!chips.length) {
+    reviewMetaChips.hidden = true;
+    reviewMetaChips.innerHTML = "";
+    return;
+  }
+
+  reviewMetaChips.hidden = false;
+  reviewMetaChips.innerHTML = chips.map(chip =>
+    renderChip(
+      chip.label,
+      `review-meta-chip review-meta-chip-${chip.type}`
+    )
+  ).join("");
+}
+
+function hideReviewCompleteActions() {
+  if (!reviewCompleteActions) return;
+
+  reviewCompleteActions.hidden = true;
+  reviewCompleteActions.innerHTML = "";
+}
+
+function buildReviewCompleteActionButton({ action, label, primary = false }) {
+  return `
+    <button class="${primary ? "primary-btn" : "secondary-btn"}" type="button" data-review-complete-action="${escapeHTML(action)}">
+      ${escapeHTML(label)}
+    </button>
+  `;
+}
+
+function buildReviewCompleteActionsHTML({ hasWeakWords, hasPractice }) {
+  const actions = [];
+
+  if (hasWeakWords) {
+    actions.push(buildReviewCompleteActionButton({
+      action: "weak",
+      label: "Repair weak words",
+      primary: true
+    }));
+  }
+
+  if (hasPractice) {
+    actions.push(buildReviewCompleteActionButton({
+      action: "smart",
+      label: "Start smart practice",
+      primary: !hasWeakWords
+    }));
+  }
+
+  if (!hasWeakWords && !hasPractice) {
+    actions.push(buildReviewCompleteActionButton({
+      action: "import",
+      label: "Add exercises"
+    }));
+  }
+
+  actions.push(buildReviewCompleteActionButton({
+    action: "home",
+    label: "Home"
+  }));
+
+  return actions.join("");
+}
+
+function buildReviewCompleteCardHTML({ hasWeakWords, hasPractice }) {
+  return `
+    <div class="review-complete-card">
+      <h3>Review complete</h3>
+      <p>No more cards are due right now.</p>
+      <div class="review-complete-action-list">
+        ${buildReviewCompleteActionsHTML({ hasWeakWords, hasPractice })}
+      </div>
+    </div>
+  `;
+}
+
+async function renderReviewCompleteActions() {
+  if (!reviewCompleteActions) return;
+
+  const weakWords = await getWeakWords();
+  const packs = await safeGetAll("exercisePacks");
+  const exercises = await safeGetAll("exercises");
+  const hasPractice = packs.length > 0 && exercises.length > 0;
+
+  reviewCompleteActions.hidden = false;
+  reviewCompleteActions.innerHTML = buildReviewCompleteCardHTML({
+    hasWeakWords: weakWords.length > 0,
+    hasPractice
+  });
+}
+
 function showNextReviewCard() {
   currentReviewWord = reviewQueue.shift() || null;
   isAnswerVisible = false;
   reviewAnswerEl.hidden = true;
   reviewActionsEl.hidden = true;
+  renderReviewMetaChips(null, false);
+  hideReviewCompleteActions();
 
   if (!currentReviewWord) {
     reviewProgressEl.textContent = "Done";
@@ -1820,6 +2306,12 @@ function showNextReviewCard() {
     reviewHintEl.textContent = "No words are due right now.";
     reviewMeaningEl.textContent = "";
     reviewExampleEl.textContent = "";
+    reviewAnswerEl.hidden = true;
+    reviewActionsEl.hidden = true;
+    renderReviewMetaChips(null, false);
+    renderReviewCompleteActions().catch(error => {
+      console.log("Review complete actions render failed:", error);
+    });
     return;
   }
 
@@ -1829,6 +2321,7 @@ function showNextReviewCard() {
   reviewHintEl.textContent = "Tap to reveal";
   reviewMeaningEl.textContent = currentReviewWord.meaning;
   reviewExampleEl.textContent = currentReviewWord.example || "";
+  renderReviewMetaChips(currentReviewWord, false);
 }
 
 function revealReviewAnswer() {
@@ -1838,6 +2331,7 @@ function revealReviewAnswer() {
   reviewAnswerEl.hidden = false;
   reviewActionsEl.hidden = false;
   reviewHintEl.hidden = true;
+  renderReviewMetaChips(currentReviewWord, true);
 }
 
 function scheduleReviewedWord(word, rating) {
@@ -3496,13 +3990,7 @@ async function importJSONData(data, typeLabelPrefix = "Imported") {
 
     showImportResult(result, { inline: true });
 
-    await refreshHomeStats();
-    await renderHomeProgress();
-    await renderWordsList();
-    await renderHomeWeakWordsSummary();
-    await renderFocusedPracticeSourceFilter();
-    await renderFocusedPracticeTagFilter();
-    await renderFocusedPracticePreview();
+    await refreshAfterImport();
 
     if (hasRunWordAudit) {
       await runWordAudit();
@@ -3539,16 +4027,7 @@ async function importJSONData(data, typeLabelPrefix = "Imported") {
 
   result.typeLabel = labels[type];
   showImportResult(result, { inline: true });
-  await refreshHomeStats();
-  await renderHomeWeakWordsSummary();
-  await renderWordsList();
-  await renderPracticePacks();
-  await renderWeakWords();
-  await renderExerciseCoverage();
-  await renderHomeProgress();
-  await renderFocusedPracticeSourceFilter();
-  await renderFocusedPracticeTagFilter();
-  await renderFocusedPracticePreview();
+  await refreshAfterImport();
 
   if (type === "words") {
     await logActivity("import_words", { value: String(result.imported) });
@@ -4113,6 +4592,33 @@ async function initApp() {
   await refreshHomeStats();
   await renderHomeProgress();
   await renderHomeWeakWordsSummary();
+
+  window.setInterval(() => {
+    refreshHomeDashboardIfDayChanged().catch(error => {
+      console.log("Home dashboard day-change refresh failed:", error);
+    });
+  }, 60 * 1000);
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      refreshHomeDashboardOnReturn().catch(error => {
+        console.log("Home dashboard visibility refresh failed:", error);
+      });
+    }
+  });
+
+  window.addEventListener("focus", () => {
+    refreshHomeDashboardOnReturn().catch(error => {
+      console.log("Home dashboard focus refresh failed:", error);
+    });
+  });
+
+  window.addEventListener("pageshow", () => {
+    refreshHomeDashboardOnReturn().catch(error => {
+      console.log("Home dashboard pageshow refresh failed:", error);
+    });
+  });
+
   await renderWordsList();
   await renderPracticePacks();
   await renderWeakWords();
@@ -4168,10 +4674,52 @@ async function initApp() {
 
     handlePracticeAnswer(button.dataset.option);
   });
+  practiceOptionsEl?.addEventListener("click", event => {
+    const actionButton = event.target.closest("[data-practice-complete-action]");
+    if (!actionButton) return;
+
+    const action = actionButton.dataset.practiceCompleteAction;
+
+    if (action === "home") {
+      showScreen("homeScreen");
+      refreshHomeDashboard().catch(error => {
+        console.log("Home dashboard refresh failed:", error);
+      });
+      return;
+    }
+
+    if (action === "again") {
+      if (currentPracticeSession.exercises.length) {
+        startPracticeSession(
+          currentPracticeSession.exercises,
+          currentPracticeSession.source,
+          currentPracticeSession.sourceId
+        );
+      }
+      return;
+    }
+
+    if (action === "repair") {
+      startMistakeRepairSession();
+      return;
+    }
+  });
 
   startSmartPracticeBtn.addEventListener("click", startSmartPractice);
   startFocusedPracticeBtn?.addEventListener("click", startFocusedPractice);
   startWeakPracticeBtn.addEventListener("click", startWeakPractice);
+  focusedPracticeConfigureBtn?.addEventListener("click", async () => {
+    isFocusedPracticeExpanded = !isFocusedPracticeExpanded;
+    renderFocusedPracticeExpandedState();
+
+    if (isFocusedPracticeExpanded) {
+      await renderFocusedPracticeSourceFilter();
+      await renderFocusedPracticeTagFilter();
+      await renderFocusedPracticePreview();
+    }
+
+    renderFocusedPracticeSummary();
+  });
   focusedPracticeTypeGrid?.addEventListener("click", event => {
     const chip = event.target.closest("[data-focused-type]");
     if (!chip) return;
@@ -4205,9 +4753,18 @@ async function initApp() {
     showScreen("practiceScreen");
   });
 
-  startReviewBtn.addEventListener("click", startReview);
-  homeSmartPracticeBtn.addEventListener("click", startSmartPractice);
-  homeOpenPracticeBtn.addEventListener("click", () => {
+  startTodayBtn?.addEventListener("click", handleStartToday);
+  startReviewBtn?.addEventListener("click", startReview);
+  homeSmartPracticeBtn?.addEventListener("click", () => {
+    startSmartPractice();
+  });
+  homeWeakPracticeBtn?.addEventListener("click", () => {
+    startWeakPractice();
+  });
+  homeFocusedPracticeBtn?.addEventListener("click", () => {
+    showScreen("practiceScreen");
+  });
+  homeOpenPracticeBtn?.addEventListener("click", () => {
     showScreen("practiceScreen");
   });
   backHomeFromReviewBtn.addEventListener("click", () => {
@@ -4219,6 +4776,34 @@ async function initApp() {
     if (!button) return;
 
     handleRating(button.dataset.rating);
+  });
+  reviewCompleteActions?.addEventListener("click", event => {
+    const button = event.target.closest("[data-review-complete-action]");
+    if (!button) return;
+
+    const action = button.dataset.reviewCompleteAction;
+
+    if (action === "weak") {
+      startWeakPractice();
+      return;
+    }
+
+    if (action === "smart") {
+      startSmartPractice();
+      return;
+    }
+
+    if (action === "import") {
+      showScreen("importScreen");
+      return;
+    }
+
+    if (action === "home") {
+      showScreen("homeScreen");
+      refreshHomeDashboard().catch(error => {
+        console.log("Home dashboard refresh failed:", error);
+      });
+    }
   });
   copyWordsPromptBtn.addEventListener("click", () => {
     copyPromptToClipboard(buildWordsPrompt(), copyWordsPromptBtn);

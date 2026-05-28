@@ -40,55 +40,77 @@
         </div>
 
         <div class="home-grid">
-          <div class="home-card review-home-card">
-            <p class="muted">Today</p>
-            <h2><span id="dueCount">0</span> words due</h2>
-            <button class="primary-btn" id="startReviewBtn">Start review</button>
-          </div>
+          <article class="home-card today-card" id="todayCard">
+            <div class="today-card-header">
+              <h2>Today</h2>
+            </div>
 
-          <div class="home-card">
-            <h2>Smart practice</h2>
-            <p>Practice the words that need the most attention.</p>
-            <button class="secondary-btn" id="homeSmartPracticeBtn" type="button">Start smart practice</button>
-          </div>
+            <div class="today-action-block">
+              <h3 id="startTodayTitle">Start today</h3>
+              <p id="startTodayDescription">Add words to start</p>
+              <button class="primary-btn" id="startTodayBtn" type="button">Start today</button>
+            </div>
 
-          <div class="home-card">
-            <h2>Weak words</h2>
-            <p id="homeWeakWordsSummary">No weak words yet.</p>
-            <button class="secondary-btn" id="homeOpenPracticeBtn" type="button">Open practice</button>
-          </div>
-          <div class="home-card progress-card" id="homeProgressCard">
-            <h2>Progress</h2>
-            <div class="progress-goal-row">
-              <span id="dailyProgressText">0 / 20 today</span>
-              <span id="streakText">0-day streak</span>
+            <div class="today-progress-block">
+              <div class="today-progress-row">
+                <span id="dailyProgressText">0 / 20 today</span>
+                <span id="streakText">0-day streak</span>
+              </div>
+
+              <div class="progress-bar">
+                <div class="progress-bar-fill progress-fill" id="dailyProgressFill"></div>
+              </div>
+
+              <p class="today-goal-status" id="todayGoalStatus">0 actions left</p>
+
+              <div class="today-mini-stats">
+                <div>
+                  <strong id="reviewsTodayText">0</strong>
+                  <span>Reviews</span>
+                </div>
+                <div>
+                  <strong id="practiceTodayText">0</strong>
+                  <span>Practice</span>
+                </div>
+                <div>
+                  <strong id="todayAccuracyText">–</strong>
+                  <span>Accuracy</span>
+                </div>
+              </div>
+
+              <p id="weekStatsText">No 7-day practice data yet.</p>
             </div>
-            <div class="progress-bar">
-              <div class="progress-bar-fill" id="dailyProgressFill"></div>
-            </div>
-            <div class="progress-stats-grid">
+          </article>
+
+          <article class="home-card practice-shortcuts-card" id="practiceShortcutsCard">
+            <div class="practice-shortcuts-header">
               <div>
-                <strong id="reviewsTodayText">0</strong>
-                <span>reviews today</span>
-              </div>
-              <div>
-                <strong id="practiceTodayText">0</strong>
-                <span>practice today</span>
-              </div>
-              <div>
-                <strong id="todayAccuracyText">–</strong>
-                <span>today accuracy</span>
-              </div>
-              <div>
-                <strong id="matureWordsText">0</strong>
-                <span>mature words</span>
+                <h2>Practice shortcuts</h2>
+                <p>Jump into a specific practice mode.</p>
               </div>
             </div>
-            <p class="muted" id="weekStatsText">No 7-day practice data yet.</p>
-          </div>
+
+            <div class="practice-shortcuts-grid">
+              <button class="shortcut-btn" id="homeSmartPracticeBtn" type="button">
+                <strong>Smart</strong>
+                <span>Auto mix</span>
+              </button>
+
+              <button class="shortcut-btn" id="homeWeakPracticeBtn" type="button">
+                <strong>Weak</strong>
+                <span id="homeWeakShortcutText">No weak words</span>
+              </button>
+
+              <button class="shortcut-btn" id="homeFocusedPracticeBtn" type="button">
+                <strong>Focused</strong>
+                <span>Manual filters</span>
+              </button>
+            </div>
+          </article>
         </div>
 
         <p class="home-stats-line" id="homeStatsLine">0 words · 0 packs · 0 weak</p>
+        <span id="dueCount" hidden>0</span>
         <span id="totalWords" hidden>0</span>
         <span id="totalPacks" hidden>0</span>
       </section>
@@ -102,6 +124,7 @@
           <div class="review-answer" id="reviewAnswer" hidden>
             <p id="reviewMeaning"></p>
             <blockquote id="reviewExample"></blockquote>
+            <div class="review-meta-chips" id="reviewMetaChips" hidden></div>
           </div>
         </div>
 
@@ -112,100 +135,123 @@
           <button class="rating-btn easy" data-rating="easy">Easy</button>
         </div>
 
+        <div class="review-complete-actions" id="reviewCompleteActions" hidden></div>
+
         <button class="secondary-btn review-back-btn" id="backHomeFromReviewBtn" type="button">Back home</button>
       </section>
 
       <section class="screen" id="practiceScreen">
-        <div class="import-card smart-practice-card">
-          <h2>Smart practice</h2>
-          <p>Practice the words that need the most attention.</p>
-          <div class="practice-control-row">
-            <label class="smart-size-label">
-              Session size
-              <select id="smartPracticeLimitSelect">
-                <option value="10">10</option>
-                <option value="20" selected>20</option>
-                <option value="30">30</option>
-              </select>
-            </label>
-            <button class="secondary-btn compact-start-btn" id="startSmartPracticeBtn" type="button">Go</button>
-          </div>
-        </div>
+        <section class="practice-section recommended-practice-section">
+          <h2 class="practice-section-title">Recommended</h2>
 
-        <div class="weak-words-card">
-          <div class="weak-words-header-row">
-            <div>
-              <h2>Weak words</h2>
-              <p>Words you often miss in practice.</p>
+          <div class="import-card smart-practice-card">
+            <h2>Smart practice</h2>
+            <p>Practice the words that need the most attention.</p>
+            <div class="practice-control-row">
+              <label class="smart-size-label">
+                Session size
+                <select id="smartPracticeLimitSelect">
+                  <option value="10">10</option>
+                  <option value="20" selected>20</option>
+                  <option value="30">30</option>
+                </select>
+              </label>
+              <button class="secondary-btn compact-start-btn" id="startSmartPracticeBtn" type="button">Go</button>
             </div>
-            <button class="secondary-btn weak-words-toggle-btn" id="toggleWeakWordsBtn" type="button">Show</button>
-          </div>
-          <p class="weak-words-summary" id="weakWordsPracticeSummary">No weak words yet.</p>
-          <div class="practice-control-row weak-practice-controls">
-            <label class="smart-size-label">
-              Session size
-              <select id="weakPracticeLimitSelect">
-                <option value="10" selected>10</option>
-                <option value="20">20</option>
-                <option value="30">30</option>
-              </select>
-            </label>
-            <button class="secondary-btn compact-start-btn" id="startWeakPracticeBtn" type="button">Go</button>
-          </div>
-          <div id="weakWordsList" class="weak-words-list"></div>
-        </div>
-
-        <div class="practice-card">
-          <h2>Focused Practice</h2>
-          <p class="section-description">Choose exercise types manually and start a custom session from selected packs.</p>
-
-          <div class="focused-filter-block">
-            <h3 class="section-title">Type</h3>
-            <div class="focused-type-chip-grid" id="focusedPracticeTypeGrid"></div>
           </div>
 
-          <div class="focused-filter-block">
-            <div class="focused-tag-filter">
-              <div class="focused-tag-filter-header">
-                <h3 class="section-title">Tags</h3>
-                <button class="small-btn" id="toggleFocusedTagsBtn" type="button">Show tags</button>
+          <div class="weak-words-card">
+            <div class="weak-words-header-row">
+              <div>
+                <h2>Weak words</h2>
+                <p>Words you often miss in practice.</p>
               </div>
-              <div class="focused-tag-chip-grid" id="focusedPracticeTagGrid" hidden></div>
-              <p class="muted control-helper">Shows common tags only. Tap tags to include any matching word.</p>
+              <button class="secondary-btn weak-words-toggle-btn" id="toggleWeakWordsBtn" type="button">Show</button>
+            </div>
+            <p class="weak-words-summary" id="weakWordsPracticeSummary">No weak words yet.</p>
+            <div class="practice-control-row weak-practice-controls">
+              <label class="smart-size-label">
+                Session size
+                <select id="weakPracticeLimitSelect">
+                  <option value="10" selected>10</option>
+                  <option value="20">20</option>
+                  <option value="30">30</option>
+                </select>
+              </label>
+              <button class="secondary-btn compact-start-btn" id="startWeakPracticeBtn" type="button">Go</button>
+            </div>
+            <div id="weakWordsList" class="weak-words-list"></div>
+          </div>
+        </section>
+
+        <section class="practice-section manual-practice-section">
+          <h2 class="practice-section-title">Manual</h2>
+
+          <div class="practice-card">
+            <h2>Focused Practice</h2>
+            <p class="section-description">Choose exercise types manually and start a custom session from selected packs.</p>
+
+            <p class="focused-practice-summary" id="focusedPracticeSummary">
+              All types · All sources · 20 questions
+            </p>
+
+            <button class="secondary-btn focused-configure-btn" id="focusedPracticeConfigureBtn" type="button">
+              Configure
+            </button>
+
+            <div class="focused-practice-controls" id="focusedPracticeControls" hidden>
+              <div class="focused-filter-block">
+                <h3 class="section-title">Type</h3>
+                <div class="focused-type-chip-grid" id="focusedPracticeTypeGrid"></div>
+              </div>
+
+              <div class="focused-filter-block">
+                <div class="focused-tag-filter">
+                  <div class="focused-tag-filter-header">
+                    <h3 class="section-title">Tags</h3>
+                    <button class="small-btn" id="toggleFocusedTagsBtn" type="button">Show tags</button>
+                  </div>
+                  <div class="focused-tag-chip-grid" id="focusedPracticeTagGrid" hidden></div>
+                  <p class="muted control-helper">Shows common tags only. Tap tags to include any matching word.</p>
+                </div>
+              </div>
+
+              <div class="focused-filter-block">
+                <h3 class="section-title">Source</h3>
+                <label class="prompt-builder-label focused-source-label">
+                  <select id="focusedPracticeSourceSelect">
+                    <option value="all">All sources</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="focused-practice-preview-line" id="focusedPracticePreview">
+                Matches: 0
+              </div>
+
+              <p class="muted control-helper">Uses selected packs. Dictionary adds app-generated meaning/word questions.</p>
+            </div>
+
+            <div class="focused-practice-start-row">
+              <label class="prompt-builder-label focused-practice-size-label">
+                Session size
+                <select id="focusedPracticeLimitSelect">
+                  <option value="10">10</option>
+                  <option value="20" selected>20</option>
+                  <option value="30">30</option>
+                  <option value="50">50</option>
+                </select>
+              </label>
+
+              <button class="primary-btn" id="startFocusedPracticeBtn" type="button">Go</button>
             </div>
           </div>
+        </section>
 
-          <div class="focused-filter-block">
-            <h3 class="section-title">Source</h3>
-            <label class="prompt-builder-label focused-source-label">
-              <select id="focusedPracticeSourceSelect">
-                <option value="all">All sources</option>
-              </select>
-            </label>
-          </div>
-
-          <div class="focused-practice-preview-line" id="focusedPracticePreview">
-            Matches: 0
-          </div>
-
-          <div class="focused-practice-start-row">
-            <label class="prompt-builder-label focused-practice-size-label">
-              Session size
-              <select id="focusedPracticeLimitSelect">
-                <option value="10">10</option>
-                <option value="20" selected>20</option>
-                <option value="30">30</option>
-                <option value="50">50</option>
-              </select>
-            </label>
-
-            <button class="primary-btn" id="startFocusedPracticeBtn" type="button">Go</button>
-          </div>
-
-          <p class="muted control-helper">Uses selected packs. Dictionary adds app-generated meaning/word questions.</p>
-        </div>
-
-        <div class="practice-list" id="practicePackList"></div>
+        <section class="practice-section packs-practice-section">
+          <h2 class="practice-section-title">Packs</h2>
+          <div class="practice-list" id="practicePackList"></div>
+        </section>
 
         <div class="empty-state" id="practiceEmptyState">
           <h2>No exercise packs yet</h2>
